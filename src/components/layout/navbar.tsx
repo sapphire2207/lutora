@@ -11,13 +11,17 @@ import {
   Menu,
   X,
   ChevronRight,
+  Shield,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
+import { useAuth } from "@/providers/auth-provider";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -117,7 +121,18 @@ export function Navbar() {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            {/* Admin Badge link (if admin) */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-accent-light text-accent text-xs font-semibold rounded-full border border-accent/20 hover:bg-accent hover:text-white transition-colors"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Admin
+              </Link>
+            )}
+
             {/* Search - Desktop only */}
             <button
               className="hidden md:flex items-center justify-center w-10 h-10 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-background-secondary transition-colors"
@@ -147,22 +162,29 @@ export function Navbar() {
               </AnimatePresence>
             </Link>
 
-            {/* Profile - Desktop only */}
-            <Link
-              href="/profile"
-              className="hidden md:flex items-center justify-center w-10 h-10 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-background-secondary transition-colors"
-              aria-label="Profile"
-            >
-              <User className="w-[18px] h-[18px]" />
-            </Link>
-
-            {/* Login Button - Desktop only */}
-            <Link
-              href="/sign-in"
-              className="hidden md:flex items-center px-5 py-2 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-full transition-colors"
-            >
-              Login
-            </Link>
+            {/* Profile / Auth actions */}
+            {user ? (
+              <Link
+                href="/profile"
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-background-secondary hover:bg-border-light transition-colors"
+              >
+                <div className="w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center">
+                  {(profile?.full_name || user.email || "U")
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+                <span className="text-xs font-medium max-w-[100px] truncate">
+                  {profile?.full_name?.split(" ")[0] || "Account"}
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="/sign-in"
+                className="hidden md:flex items-center px-5 py-2 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-full transition-colors"
+              >
+                Login
+              </Link>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -221,13 +243,39 @@ export function Navbar() {
                     </Link>
                   );
                 })}
-                <div className="mt-3 pt-3 border-t border-border">
+
+                {isAdmin && (
                   <Link
-                    href="/sign-in"
-                    className="flex items-center justify-center py-3 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors"
+                    href="/admin"
+                    className="flex items-center justify-between px-4 py-3 rounded-lg text-sm font-semibold text-accent bg-accent-light"
                   >
-                    Sign In
+                    <span className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" /> Admin Dashboard
+                    </span>
+                    <ChevronRight className="w-4 h-4 opacity-40" />
                   </Link>
+                )}
+
+                <div className="mt-3 pt-3 border-t border-border">
+                  {user ? (
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-danger bg-danger-light rounded-lg transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  ) : (
+                    <Link
+                      href="/sign-in"
+                      className="flex items-center justify-center py-3 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                  )}
                 </div>
               </nav>
             </motion.div>

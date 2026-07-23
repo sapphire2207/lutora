@@ -15,6 +15,8 @@ import {
   Shield,
   Plus,
   Quote,
+  Sparkles,
+  Utensils,
 } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import {
@@ -57,6 +59,13 @@ const trustIconMap: Record<string, React.ElementType> = {
   Star,
 };
 
+// Icon map for Categories
+const categoryIconMap: Record<string, React.ElementType> = {
+  Utensils,
+  Flame,
+  Sparkles,
+};
+
 export default function HomePage() {
   return (
     <div className="overflow-hidden">
@@ -91,7 +100,7 @@ function HeroSection() {
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent-light text-accent text-xs font-semibold rounded-full mb-6"
             >
               <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
-              New Flavor Alert
+              Signature Flavors
             </motion.div>
 
             <motion.h1
@@ -218,27 +227,30 @@ function CategoriesSection() {
             variants={fadeUp}
             className="text-xl sm:text-2xl font-bold"
           >
-            What&apos;s on your mind?
+            Explore Flavors
           </motion.h2>
 
           <motion.div
             variants={fadeUp}
             className="mt-6 flex gap-3 overflow-x-auto no-scrollbar pb-2"
           >
-            {CATEGORIES.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/menu?category=${cat.slug}`}
-                className="flex flex-col items-center gap-2 px-5 py-4 bg-white rounded-2xl border border-border hover:border-accent hover:shadow-md transition-all shrink-0 min-w-[90px] group"
-              >
-                <span className="text-2xl group-hover:scale-110 transition-transform">
-                  {cat.icon}
-                </span>
-                <span className="text-xs font-medium text-foreground-secondary group-hover:text-foreground transition-colors">
-                  {cat.name}
-                </span>
-              </Link>
-            ))}
+            {CATEGORIES.map((cat) => {
+              const Icon = categoryIconMap[cat.icon] || Utensils;
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/menu?category=${cat.slug}`}
+                  className="flex items-center gap-2.5 px-6 py-3.5 bg-white rounded-2xl border border-border hover:border-accent hover:shadow-md transition-all shrink-0 group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-accent-light text-accent flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-colors">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">
+                    {cat.name}
+                  </span>
+                </Link>
+              );
+            })}
           </motion.div>
         </motion.div>
       </div>
@@ -271,18 +283,19 @@ function PopularPicksSection() {
             className="flex items-end justify-between mb-8"
           >
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">
-                Popular Picks 🔥
+              <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                Signature Flavors
+                <Flame className="w-5 h-5 text-accent" />
               </h2>
               <p className="text-sm text-foreground-secondary mt-1">
-                Our customers&apos; favorites
+                Handcrafted Peri Peri Spicy & Organic Honey Makhna
               </p>
             </div>
             <Link
               href="/menu"
               className="hidden sm:flex items-center gap-1 text-sm font-medium text-accent hover:text-accent-hover transition-colors"
             >
-              View All Menu
+              View Menu
               <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
@@ -304,7 +317,7 @@ function PopularPicksSection() {
             href="/menu"
             className="sm:hidden flex items-center justify-center gap-1 mt-6 text-sm font-medium text-accent hover:text-accent-hover transition-colors"
           >
-            View All Menu
+            View Menu
             <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -321,6 +334,9 @@ function ProductCard({
   product: typeof SEED_PRODUCTS[number];
   onAddToCart: () => void;
 }) {
+  const cat = CATEGORIES.find((c) => c.id === product.category);
+  const CatIcon = cat ? categoryIconMap[cat.icon] || Utensils : Utensils;
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -364,9 +380,9 @@ function ProductCard({
                 ({product.review_count})
               </span>
               <span className="text-foreground-muted mx-1">·</span>
-              <span className="text-xs text-foreground-muted">
-                {CATEGORIES.find((c) => c.id === product.category)?.icon}{" "}
-                {CATEGORIES.find((c) => c.id === product.category)?.name}
+              <span className="text-xs text-foreground-muted flex items-center gap-1">
+                <CatIcon className="w-3 h-3 text-accent" />
+                {cat?.name}
               </span>
             </div>
           </div>

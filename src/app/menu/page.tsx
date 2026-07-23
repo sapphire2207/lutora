@@ -3,7 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Star, Plus, SlidersHorizontal } from "lucide-react";
+import {
+  Search,
+  Star,
+  Plus,
+  SlidersHorizontal,
+  Flame,
+  Sparkles,
+  Utensils,
+  UtensilsCrossed,
+} from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn, formatPrice } from "@/lib/utils";
 import { SEED_PRODUCTS, CATEGORIES } from "@/lib/constants";
@@ -14,6 +23,12 @@ import type { Product } from "@/types";
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
+};
+
+const categoryIconMap: Record<string, React.ElementType> = {
+  Utensils,
+  Flame,
+  Sparkles,
 };
 
 export default function MenuPage() {
@@ -67,14 +82,10 @@ export default function MenuPage() {
       {/* Page Header */}
       <section className="bg-background-secondary border-b border-border">
         <div className="container-app py-8 md:py-12">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-          >
-            <h1 className="text-2xl sm:text-3xl font-bold">Our Menu</h1>
+          <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+            <h1 className="text-2xl sm:text-3xl font-bold">Our Flavors</h1>
             <p className="text-sm text-foreground-secondary mt-1">
-              Fresh, bold, and made with love
+              Handcrafted Peri Peri Spicy & Organic Honey Makhna
             </p>
           </motion.div>
 
@@ -119,32 +130,26 @@ export default function MenuPage() {
       {/* Category Tabs */}
       <section className="sticky top-[var(--nav-height)] z-30 bg-white border-b border-border">
         <div className="container-app">
-          <div className="flex gap-1 overflow-x-auto no-scrollbar py-3">
-            <button
-              onClick={() => setSelectedCategory("all")}
-              className={cn(
-                "px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all",
-                selectedCategory === "all"
-                  ? "bg-foreground text-white"
-                  : "bg-background-secondary text-foreground-secondary hover:bg-border-light"
-              )}
-            >
-              All
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all",
-                  selectedCategory === cat.id
-                    ? "bg-foreground text-white"
-                    : "bg-background-secondary text-foreground-secondary hover:bg-border-light"
-                )}
-              >
-                {cat.icon} {cat.name}
-              </button>
-            ))}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-3">
+            {CATEGORIES.map((cat) => {
+              const Icon = categoryIconMap[cat.icon] || Utensils;
+              const isSelected = selectedCategory === cat.slug;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.slug)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all",
+                    isSelected
+                      ? "bg-foreground text-white"
+                      : "bg-background-secondary text-foreground-secondary hover:bg-border-light"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {cat.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -154,7 +159,9 @@ export default function MenuPage() {
         <div className="container-app">
           {filteredProducts.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-4xl mb-3">🍽️</p>
+              <div className="w-16 h-16 mx-auto bg-background-secondary rounded-full flex items-center justify-center mb-3">
+                <UtensilsCrossed className="w-8 h-8 text-foreground-muted" />
+              </div>
               <p className="text-lg font-semibold">No items found</p>
               <p className="text-sm text-foreground-secondary mt-1">
                 Try adjusting your search or filters
@@ -162,100 +169,109 @@ export default function MenuPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {filteredProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div className="group bg-white rounded-2xl border border-border hover:border-accent/30 hover:shadow-xl transition-all duration-300 overflow-hidden">
-                    {/* Mobile Layout: Stack | Desktop Layout: Side by Side */}
-                    <div className="flex flex-col sm:flex-row">
-                      {/* Image */}
-                      <Link
-                        href={`/menu/${product.slug}`}
-                        className="relative w-full sm:w-52 h-52 sm:h-auto bg-background-secondary shrink-0 overflow-hidden"
-                      >
-                        <Image
-                          src={product.id === "makhna-spicy" ? "/images/makhna-spicy.png" : "/images/makhna-honey.jpg"}
-                          alt={product.name}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          sizes="(max-width: 640px) 100vw, 200px"
-                        />
-                        {product.is_bestseller && (
-                          <span className="absolute top-3 left-3 px-2.5 py-1 bg-accent text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
-                            Bestseller
-                          </span>
-                        )}
-                      </Link>
+              {filteredProducts.map((product, index) => {
+                const cat = CATEGORIES.find((c) => c.slug === product.category);
+                const CatIcon = cat ? categoryIconMap[cat.icon] || Utensils : Utensils;
 
-                      {/* Content */}
-                      <div className="flex-1 p-5 flex flex-col justify-between">
-                        <div>
-                          <Link href={`/menu/${product.slug}`}>
-                            <h3 className="text-lg font-semibold text-foreground group-hover:text-accent transition-colors">
-                              {product.name}
-                            </h3>
-                          </Link>
-                          <p className="text-sm text-foreground-secondary mt-1.5 line-clamp-2 leading-relaxed">
-                            {product.description}
-                          </p>
-
-                          {/* Meta */}
-                          <div className="flex items-center gap-3 mt-3">
-                            <div className="flex items-center gap-1">
-                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                              <span className="text-sm font-semibold">
-                                {product.rating}
-                              </span>
-                              <span className="text-xs text-foreground-muted">
-                                ({product.review_count})
-                              </span>
-                            </div>
-                            <span className="text-foreground-muted">·</span>
-                            <span className="text-xs text-foreground-muted">
-                              Spice: {"🌶️".repeat(product.spice_level)}
+                return (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div className="group bg-white rounded-2xl border border-border hover:border-accent/30 hover:shadow-xl transition-all duration-300 overflow-hidden">
+                      <div className="flex flex-col sm:flex-row">
+                        {/* Image */}
+                        <Link
+                          href={`/menu/${product.slug}`}
+                          className="relative w-full sm:w-52 h-52 sm:h-auto bg-background-secondary shrink-0 overflow-hidden"
+                        >
+                          <Image
+                            src={product.id === "makhna-spicy" ? "/images/makhna-spicy.png" : "/images/makhna-honey.jpg"}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            sizes="(max-width: 640px) 100vw, 200px"
+                          />
+                          {product.is_bestseller && (
+                            <span className="absolute top-3 left-3 px-2.5 py-1 bg-accent text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                              Bestseller
                             </span>
+                          )}
+                        </Link>
+
+                        {/* Content */}
+                        <div className="flex-1 p-5 flex flex-col justify-between">
+                          <div>
+                            <Link href={`/menu/${product.slug}`}>
+                              <h3 className="text-lg font-semibold text-foreground group-hover:text-accent transition-colors">
+                                {product.name}
+                              </h3>
+                            </Link>
+                            <p className="text-sm text-foreground-secondary mt-1.5 line-clamp-2 leading-relaxed">
+                              {product.description}
+                            </p>
+
+                            {/* Meta */}
+                            <div className="flex items-center gap-3 mt-3">
+                              <div className="flex items-center gap-1">
+                                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                <span className="text-sm font-semibold">
+                                  {product.rating}
+                                </span>
+                                <span className="text-xs text-foreground-muted">
+                                  ({product.review_count})
+                                </span>
+                              </div>
+                              <span className="text-foreground-muted">·</span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-foreground-muted">Spice:</span>
+                                <div className="flex items-center">
+                                  {Array.from({ length: product.spice_level }).map((_, i) => (
+                                    <Flame key={i} className="w-3.5 h-3.5 text-accent fill-accent/20" />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Ingredients Preview */}
+                            <div className="flex flex-wrap gap-1.5 mt-3">
+                              {product.ingredients.slice(0, 3).map((ing) => (
+                                <span
+                                  key={ing}
+                                  className="px-2 py-0.5 bg-background-secondary text-foreground-muted text-[10px] rounded-full"
+                                >
+                                  {ing}
+                                </span>
+                              ))}
+                              {product.ingredients.length > 3 && (
+                                <span className="px-2 py-0.5 bg-background-secondary text-foreground-muted text-[10px] rounded-full">
+                                  +{product.ingredients.length - 3} more
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          {/* Ingredients Preview */}
-                          <div className="flex flex-wrap gap-1.5 mt-3">
-                            {product.ingredients.slice(0, 3).map((ing) => (
-                              <span
-                                key={ing}
-                                className="px-2 py-0.5 bg-background-secondary text-foreground-muted text-[10px] rounded-full"
-                              >
-                                {ing}
-                              </span>
-                            ))}
-                            {product.ingredients.length > 3 && (
-                              <span className="px-2 py-0.5 bg-background-secondary text-foreground-muted text-[10px] rounded-full">
-                                +{product.ingredients.length - 3} more
-                              </span>
-                            )}
+                          {/* Price & Add */}
+                          <div className="flex items-center justify-between mt-5 pt-4 border-t border-border-light">
+                            <span className="text-xl font-bold text-foreground">
+                              {formatPrice(product.price)}
+                            </span>
+                            <button
+                              onClick={() => handleAddToCart(product)}
+                              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-full transition-all hover:shadow-md active:scale-95"
+                            >
+                              Add
+                              <Plus className="w-4 h-4" />
+                            </button>
                           </div>
-                        </div>
-
-                        {/* Price & Add */}
-                        <div className="flex items-center justify-between mt-5 pt-4 border-t border-border-light">
-                          <span className="text-xl font-bold text-foreground">
-                            {formatPrice(product.price)}
-                          </span>
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-full transition-all hover:shadow-md active:scale-95"
-                          >
-                            Add
-                            <Plus className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>

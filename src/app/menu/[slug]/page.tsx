@@ -14,6 +14,9 @@ import {
   Share2,
   Flame,
   ChevronRight,
+  Zap,
+  Gift,
+  UtensilsCrossed,
 } from "lucide-react";
 import { useState } from "react";
 import { cn, formatPrice } from "@/lib/utils";
@@ -34,7 +37,9 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-5xl mb-4">🍽️</p>
+          <div className="w-16 h-16 mx-auto bg-background-secondary rounded-full flex items-center justify-center mb-4">
+            <UtensilsCrossed className="w-8 h-8 text-foreground-muted" />
+          </div>
           <h1 className="text-2xl font-bold">Product Not Found</h1>
           <p className="text-sm text-foreground-secondary mt-2">
             The product you&apos;re looking for doesn&apos;t exist.
@@ -106,7 +111,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Action Buttons (Mobile: Bottom | Desktop: Top Right) */}
+            {/* Action Buttons */}
             <div className="absolute top-4 right-4 flex flex-col gap-2">
               <button
                 onClick={() => {
@@ -212,7 +217,7 @@ export default function ProductDetailPage() {
                 ))}
               </div>
               <p className="text-xs text-foreground-muted mt-2">
-                {spiceInfo?.emoji} {spiceInfo?.label}
+                {spiceInfo?.label}
               </p>
             </div>
 
@@ -269,7 +274,9 @@ export default function ProductDetailPage() {
             {/* Delivery Info */}
             <div className="mt-6 grid grid-cols-2 gap-3">
               <div className="flex items-center gap-3 p-3 bg-background-secondary rounded-xl">
-                <span className="text-lg">🚀</span>
+                <div className="w-8 h-8 rounded-lg bg-accent-light text-accent flex items-center justify-center shrink-0">
+                  <Zap className="w-4 h-4" />
+                </div>
                 <div>
                   <p className="text-xs font-semibold">Fast Delivery</p>
                   <p className="text-[10px] text-foreground-muted">
@@ -278,7 +285,9 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-background-secondary rounded-xl">
-                <span className="text-lg">🎁</span>
+                <div className="w-8 h-8 rounded-lg bg-accent-light text-accent flex items-center justify-center shrink-0">
+                  <Gift className="w-4 h-4" />
+                </div>
                 <div>
                   <p className="text-xs font-semibold">Free Delivery</p>
                   <p className="text-[10px] text-foreground-muted">

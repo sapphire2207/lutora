@@ -77,7 +77,9 @@ export default function CheckoutPage() {
           >
             <Check className="w-10 h-10 text-success" />
           </motion.div>
-          <h1 className="text-2xl font-bold">Order Placed! 🎉</h1>
+          <h1 className="text-2xl font-bold flex items-center justify-center gap-2">
+            Order Placed!
+          </h1>
           <p className="text-sm text-foreground-secondary mt-2">
             Your order <span className="font-semibold text-foreground">{orderId}</span> has
             been placed successfully. We&apos;ll start preparing it right away.

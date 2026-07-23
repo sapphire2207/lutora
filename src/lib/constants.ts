@@ -55,11 +55,11 @@ export const ORDER_STATUS_COLORS: Record<string, string> = {
 
 // Spice Levels
 export const SPICE_LEVELS = [
-  { level: 1, label: "Mild", emoji: "🌶️" },
-  { level: 2, label: "Medium", emoji: "🌶️🌶️" },
-  { level: 3, label: "Hot", emoji: "🌶️🌶️🌶️" },
-  { level: 4, label: "Very Hot", emoji: "🌶️🌶️🌶️🌶️" },
-  { level: 5, label: "Extreme", emoji: "🌶️🌶️🌶️🌶️🌶️" },
+  { level: 1, label: "Mild" },
+  { level: 2, label: "Medium" },
+  { level: 3, label: "Hot" },
+  { level: 4, label: "Very Hot" },
+  { level: 5, label: "Extreme" },
 ] as const;
 
 // Pricing
@@ -67,13 +67,11 @@ export const DELIVERY_FEE = 30;
 export const TAX_RATE = 0.05; // 5% GST
 export const FREE_DELIVERY_THRESHOLD = 299;
 
-// Categories
+// Categories (Focused strictly on our 2 signature Makhna flavors)
 export const CATEGORIES = [
-  { id: "makhna", name: "Makhna", slug: "makhna", icon: "🍲" },
-  { id: "fries", name: "Fries", slug: "fries", icon: "🍟" },
-  { id: "beverages", name: "Beverages", slug: "beverages", icon: "🥤" },
-  { id: "combos", name: "Combos", slug: "combos", icon: "🎁" },
-  { id: "desserts", name: "Desserts", slug: "desserts", icon: "🍰" },
+  { id: "all", name: "All Flavors", slug: "all", icon: "Utensils" },
+  { id: "spicy", name: "Peri Peri Spicy", slug: "spicy", icon: "Flame" },
+  { id: "honey", name: "Honey Sweet", slug: "honey", icon: "Sparkles" },
 ] as const;
 
 // Seed Products (our 2 main products)
@@ -85,7 +83,7 @@ export const SEED_PRODUCTS = [
     description:
       "Our signature spicy peri peri makhna, tossed in a fiery blend of African bird's eye chili, garlic, and hand-picked spices. Crispy on the outside, light and airy inside. The perfect balance of heat and flavor that keeps you coming back.",
     price: 179,
-    category: "makhna",
+    category: "spicy",
     spice_level: 3,
     ingredients: [
       "Premium Makhna (Fox Nuts)",
@@ -100,7 +98,7 @@ export const SEED_PRODUCTS = [
     is_bestseller: true,
     rating: 4.8,
     review_count: 230,
-    image: "/images/makhna-spicy.jpg",
+    image: "/images/makhna-spicy.png",
   },
   {
     id: "makhna-honey",
@@ -109,7 +107,7 @@ export const SEED_PRODUCTS = [
     description:
       "A sweet twist on our classic makhna. Drizzled with organic honey and a hint of cinnamon, these golden fox nuts deliver a satisfying crunch with every bite. Perfect for when you crave something sweet yet wholesome.",
     price: 199,
-    category: "makhna",
+    category: "honey",
     spice_level: 1,
     ingredients: [
       "Premium Makhna (Fox Nuts)",

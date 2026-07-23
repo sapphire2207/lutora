@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Heart, Flame, Award, Users } from "lucide-react";
+import { Heart, Flame, Award, Users, Leaf } from "lucide-react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -139,36 +139,41 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
             {[
               {
-                emoji: "🌱",
+                icon: Leaf,
                 title: "Natural Ingredients",
                 desc: "No artificial flavors, no preservatives, no MSG. Just real food.",
               },
               {
-                emoji: "🔥",
+                icon: Flame,
                 title: "Bold Innovation",
                 desc: "We push boundaries to create flavors you've never experienced before.",
               },
               {
-                emoji: "💚",
+                icon: Heart,
                 title: "Health First",
                 desc: "Low calorie, high protein, gluten-free. Snacking without the guilt.",
               },
-            ].map((value, i) => (
-              <motion.div
-                key={value.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-8 bg-white rounded-2xl border border-border"
-              >
-                <span className="text-4xl">{value.emoji}</span>
-                <h3 className="text-base font-semibold mt-4">{value.title}</h3>
-                <p className="text-sm text-foreground-secondary mt-2">
-                  {value.desc}
-                </p>
-              </motion.div>
-            ))}
+            ].map((value, i) => {
+              const Icon = value.icon;
+              return (
+                <motion.div
+                  key={value.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="p-8 bg-white rounded-2xl border border-border flex flex-col items-center"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-accent-light text-accent flex items-center justify-center">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-semibold mt-4">{value.title}</h3>
+                  <p className="text-sm text-foreground-secondary mt-2">
+                    {value.desc}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>

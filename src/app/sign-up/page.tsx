@@ -42,8 +42,9 @@ export default function SignUpPage() {
         return;
       }
 
-      toast.success("Account created! Please check your email to verify.");
-      router.push("/sign-in");
+      toast.success("Account created successfully! Welcome to LUTORA.");
+      router.push("/");
+      router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");
     }
