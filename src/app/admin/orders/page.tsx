@@ -3,13 +3,19 @@
 import { motion } from "framer-motion";
 import { Search, Eye, CheckCircle, XCircle, Package, Loader2 } from "lucide-react";
 import { cn, formatPrice, formatDateTime } from "@/lib/utils";
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/lib/constants";
+import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 const STATUS_FILTERS = ["all", "pending", "confirmed", "preparing", "out_for_delivery", "delivered", "cancelled"];
+
+const STATUS_SELECT_OPTIONS = STATUS_FILTERS.filter((s) => s !== "all").map((st) => ({
+  value: st,
+  label: ORDER_STATUS_LABELS[st] || st,
+}));
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -90,9 +96,9 @@ export default function AdminOrdersPage() {
   return (
     <div className="p-6 md:p-8">
       <div>
-        <h1 className="text-2xl font-bold">Orders</h1>
+        <h1 className="text-2xl font-bold">Orders Management</h1>
         <p className="text-sm text-foreground-secondary mt-1">
-          Manage and track all customer orders
+          Manage, track, and update status of customer orders in real-time
         </p>
       </div>
 
@@ -164,24 +170,17 @@ export default function AdminOrdersPage() {
                   <div className="flex items-center gap-3">
                     <Package className="w-4 h-4 text-foreground-muted shrink-0" />
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold">{displayId}</span>
-                        <select
+                        {/* Custom Select Dropdown for status update */}
+                        <CustomSelect
+                          options={STATUS_SELECT_OPTIONS}
                           value={order.status}
-                          onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                          className={cn(
-                            "px-2.5 py-0.5 text-[10px] font-semibold rounded-full border-none cursor-pointer focus:outline-none capitalize",
-                            ORDER_STATUS_COLORS[order.status] || "bg-background-secondary"
-                          )}
-                        >
-                          {STATUS_FILTERS.filter((f) => f !== "all").map((st) => (
-                            <option key={st} value={st}>
-                              {ORDER_STATUS_LABELS[st] || st}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => handleUpdateStatus(order.id, val)}
+                          className="w-40"
+                        />
                       </div>
-                      <p className="text-xs text-foreground-muted mt-0.5">
+                      <p className="text-xs text-foreground-muted mt-1">
                         {customerName} · {itemSummary}
                       </p>
                     </div>
@@ -196,7 +195,7 @@ export default function AdminOrdersPage() {
                       <Link
                         href={`/orders/${order.id}`}
                         className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent-light transition-colors"
-                        title="View Order Detail"
+                        title="View Live Order Tracking"
                       >
                         <Eye className="w-4 h-4" />
                       </Link>

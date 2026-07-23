@@ -14,10 +14,11 @@ import {
   Truck,
   PartyPopper,
   Loader2,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn, formatPrice, formatDateTime } from "@/lib/utils";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import type { Order } from "@/types";
 
@@ -36,32 +37,37 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const supabase = createClient();
+  const fetchOrder = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*, product:products(*))")
+        .or(`id.eq.${orderId},order_number.eq.${orderId}`)
+        .single();
 
-    async function fetchOrder() {
-      try {
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*, order_items(*, product:products(*))")
-          .or(`id.eq.${orderId},order_number.eq.${orderId}`)
-          .single();
-
-        if (error) {
-          console.error("Error fetching order detail:", error.message);
-        } else {
-          setOrder(data);
-        }
-      } catch (err) {
-        console.error("Order detail exception:", err);
-      } finally {
-        setIsLoading(false);
+      if (error) {
+        console.error("Error fetching order detail:", error.message);
+      } else {
+        setOrder(data);
       }
+    } catch (err) {
+      console.error("Order detail exception:", err);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchOrder();
 
-    // Realtime subscription for live status changes
+    // 1. Polling interval (3 seconds) for 100% guaranteed live status updates
+    const pollInterval = setInterval(() => {
+      fetchOrder();
+    }, 3000);
+
+    // 2. Realtime WebSocket subscription
+    const supabase = createClient();
     const channel = supabase
       .channel(`order-updates-${orderId}`)
       .on(
@@ -80,6 +86,7 @@ export default function OrderDetailPage() {
       .subscribe();
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [orderId]);
@@ -112,6 +119,7 @@ export default function OrderDetailPage() {
     );
   }
 
+  const isCancelled = order.status === "cancelled";
   const currentStatusIndex = TIMELINE_STEPS.findIndex(
     (s) => s.status === order.status
   );
@@ -122,88 +130,110 @@ export default function OrderDetailPage() {
     <div className="min-h-screen">
       <div className="container-app py-6 md:py-10 max-w-2xl">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <Link
-            href="/orders"
-            className="p-2 rounded-lg hover:bg-background-secondary transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold">Order {displayOrderNumber}</h1>
-            <p className="text-xs text-foreground-muted flex items-center gap-1 mt-0.5">
-              <Clock className="w-3 h-3" />
-              {formatDateTime(order.created_at)}
-            </p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/orders"
+              className="p-2 rounded-lg hover:bg-background-secondary transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-xl font-bold">Order {displayOrderNumber}</h1>
+              <p className="text-xs text-foreground-muted flex items-center gap-1 mt-0.5">
+                <Clock className="w-3 h-3" />
+                {formatDateTime(order.created_at)}
+              </p>
+            </div>
           </div>
+
+          <span
+            className={cn(
+              "px-3 py-1 text-xs font-bold rounded-full capitalize",
+              ORDER_STATUS_COLORS[order.status] || "bg-background-secondary text-foreground-secondary"
+            )}
+          >
+            {ORDER_STATUS_LABELS[order.status] || order.status}
+          </span>
         </div>
 
         {/* Timeline */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-border p-6 mb-6"
+          className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-sm"
         >
-          <h2 className="text-base font-semibold mb-6">Order Status</h2>
-          <div className="space-y-0">
-            {TIMELINE_STEPS.map((step, index) => {
-              const isCompleted = index <= currentStatusIndex;
-              const isCurrent = index === currentStatusIndex;
-              const Icon = step.icon;
+          <h2 className="text-base font-semibold mb-6">Live Order Tracking</h2>
 
-              return (
-                <div key={step.status} className="flex gap-4">
-                  {/* Line + Dot */}
-                  <div className="flex flex-col items-center">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: index * 0.15 }}
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors",
-                        isCompleted
-                          ? "bg-accent border-accent text-white"
-                          : "bg-background-secondary border-border text-foreground-muted"
-                      )}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </motion.div>
-                    {index < TIMELINE_STEPS.length - 1 && (
-                      <div
+          {isCancelled ? (
+            <div className="p-4 bg-danger-light text-danger rounded-xl flex items-center gap-3">
+              <XCircle className="w-6 h-6 shrink-0" />
+              <div>
+                <p className="text-sm font-bold">Order Cancelled</p>
+                <p className="text-xs mt-0.5">This order was cancelled by the store or customer.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {TIMELINE_STEPS.map((step, index) => {
+                const isCompleted = index <= currentStatusIndex;
+                const isCurrent = index === currentStatusIndex;
+                const Icon = step.icon;
+
+                return (
+                  <div key={step.status} className="flex gap-4">
+                    {/* Line + Dot */}
+                    <div className="flex flex-col items-center">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: index * 0.1 }}
                         className={cn(
-                          "w-0.5 h-10 transition-colors",
-                          index < currentStatusIndex
-                            ? "bg-accent"
-                            : "bg-border"
+                          "w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors",
+                          isCompleted
+                            ? "bg-accent border-accent text-white"
+                            : "bg-background-secondary border-border text-foreground-muted"
                         )}
-                      />
-                    )}
-                  </div>
+                      >
+                        <Icon className="w-5 h-5" />
+                      </motion.div>
+                      {index < TIMELINE_STEPS.length - 1 && (
+                        <div
+                          className={cn(
+                            "w-0.5 h-10 transition-colors",
+                            index < currentStatusIndex
+                              ? "bg-accent"
+                              : "bg-border"
+                          )}
+                        />
+                      )}
+                    </div>
 
-                  {/* Content */}
-                  <div className="pb-6">
-                    <p
-                      className={cn(
-                        "text-sm font-semibold",
-                        !isCompleted && "text-foreground-muted"
-                      )}
-                    >
-                      {step.label}
-                      {isCurrent && (
-                        <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light text-accent text-[10px] font-bold rounded-full">
-                          <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
-                          Current
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-foreground-muted mt-0.5">
-                      {step.description}
-                    </p>
+                    {/* Content */}
+                    <div className="pb-6">
+                      <p
+                        className={cn(
+                          "text-sm font-semibold flex items-center gap-2",
+                          !isCompleted && "text-foreground-muted"
+                        )}
+                      >
+                        {step.label}
+                        {isCurrent && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light text-accent text-[10px] font-bold rounded-full">
+                            <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                            Live Status
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-foreground-muted mt-0.5">
+                        {step.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </motion.div>
 
         {/* Order Items */}
@@ -211,7 +241,7 @@ export default function OrderDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl border border-border p-6 mb-6"
+          className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-sm"
         >
           <h2 className="text-base font-semibold mb-4">Items</h2>
           <div className="space-y-3">
@@ -239,7 +269,7 @@ export default function OrderDetailPage() {
                 <span>{formatPrice(order.subtotal || order.total)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-foreground-secondary">Tax</span>
+                <span className="text-foreground-secondary">GST (5%)</span>
                 <span>{formatPrice(order.tax || 0)}</span>
               </div>
               <div className="flex justify-between">
@@ -261,25 +291,20 @@ export default function OrderDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-2xl border border-border p-6"
+          className="bg-white rounded-2xl border border-border p-6 shadow-sm"
         >
           <h2 className="text-base font-semibold mb-4">Delivery Details</h2>
           <div className="space-y-3">
             <div className="flex items-start gap-3 text-sm">
               <MapPin className="w-4 h-4 text-accent shrink-0 mt-0.5" />
               <span className="text-foreground-secondary">
-                123 Main Street, Apartment 4B, City - 400001
+                {order.notes || "Customer Delivery Address"}
               </span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <Phone className="w-4 h-4 text-accent shrink-0" />
               <span className="text-foreground-secondary">+91 {order.phone}</span>
             </div>
-            {order.notes && (
-              <div className="p-3 bg-background-secondary rounded-lg text-xs text-foreground-secondary">
-                <span className="font-medium text-foreground">Note:</span> {order.notes}
-              </div>
-            )}
           </div>
         </motion.div>
       </div>
