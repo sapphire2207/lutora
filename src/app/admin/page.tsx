@@ -39,14 +39,30 @@ export default function AdminDashboard() {
         // 1. Fetch Orders
         const { data: ordersData, error: ordersError } = await supabase
           .from("orders")
-          .select("*, profile:profiles(*), order_items(*, product:products(*))")
+          .select("*, order_items(*, product:products(*))")
           .order("created_at", { ascending: false });
 
         if (ordersError) {
           console.error("Dashboard orders fetch error:", ordersError.message);
         }
 
-        const orders = ordersData || [];
+        let orders = ordersData || [];
+        if (orders.length > 0) {
+          const userIds = Array.from(new Set(orders.map((o) => o.user_id).filter(Boolean)));
+          if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+              .from("profiles")
+              .select("*")
+              .in("id", userIds);
+
+            const profileMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
+            orders = orders.map((o) => ({
+              ...o,
+              profile: profileMap.get(o.user_id) || null,
+            }));
+          }
+        }
+
         setRecentOrders(orders.slice(0, 5));
 
         const revenueSum = orders.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);

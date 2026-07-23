@@ -20,15 +20,30 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data: ordersData, error } = await supabase
         .from("orders")
-        .select("*, profile:profiles(*), order_items(*, product:products(*))")
+        .select("*, order_items(*, product:products(*))")
         .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching admin orders:", error.message);
-      } else {
-        setOrders(data || []);
+      } else if (ordersData) {
+        const userIds = Array.from(new Set(ordersData.map((o) => o.user_id).filter(Boolean)));
+        if (userIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("*")
+            .in("id", userIds);
+
+          const profileMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
+          const merged = ordersData.map((o) => ({
+            ...o,
+            profile: profileMap.get(o.user_id) || null,
+          }));
+          setOrders(merged);
+        } else {
+          setOrders(ordersData);
+        }
       }
     } catch (err) {
       console.error("Admin orders exception:", err);

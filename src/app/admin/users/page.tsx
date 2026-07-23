@@ -37,10 +37,10 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       const supabase = createClient();
-      // Fetch profiles with count of orders & addresses
+      // Fetch profiles
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("*, orders:orders(count), addresses:addresses(count)")
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
