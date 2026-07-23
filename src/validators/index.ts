@@ -66,7 +66,13 @@ export const addressSchema = z.object({
 
 // --- Checkout Validator ---
 export const checkoutSchema = z.object({
-  address_id: z.string().min(1, "Please select a delivery address"),
+  label: z.string().min(1, "Address label is required"),
+  address_line: z.string().min(5, "Please enter your full street address"),
+  city: z.string().min(2, "Please enter your city"),
+  pincode: z
+    .string()
+    .min(1, "Pincode is required")
+    .regex(/^\d{6}$/, "Please enter a valid 6-digit pincode"),
   phone: z
     .string()
     .min(1, "Phone number is required")

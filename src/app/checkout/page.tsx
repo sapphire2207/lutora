@@ -11,34 +11,79 @@ import {
   Loader2,
   ShoppingBag,
   Check,
+  Building,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutSchema, type CheckoutFormData } from "@/validators";
 import { useCartStore } from "@/stores/cart-store";
 import { formatPrice, generateOrderId } from "@/lib/utils";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { user, profile } = useAuth();
   const { items, getSubtotal, getTax, getDeliveryFee, getTotal, clearCart } =
     useCartStore();
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      address_id: "default",
+      label: "Home",
+      address_line: "",
+      city: "Mumbai",
+      pincode: "400001",
       phone: "",
       notes: "",
     },
   });
+
+  // Load saved addresses and default phone from Supabase
+  useEffect(() => {
+    async function loadUserData() {
+      if (profile?.phone) {
+        setValue("phone", profile.phone);
+      }
+
+      if (user) {
+        try {
+          const supabase = createClient();
+          const { data } = await supabase
+            .from("addresses")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("is_default", { ascending: false });
+
+          if (data && data.length > 0) {
+            setSavedAddresses(data);
+            // Auto fill first address
+            const first = data[0];
+            setValue("label", first.label);
+            setValue("address_line", first.address_line);
+            setValue("city", first.city);
+            setValue("pincode", first.pincode);
+          }
+        } catch (err) {
+          console.error("Error loading addresses:", err);
+        }
+      }
+      setIsLoadingAddresses(false);
+    }
+
+    loadUserData();
+  }, [user, profile, setValue]);
 
   if (items.length === 0 && !isSuccess) {
     return (
@@ -105,14 +150,82 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutFormData) => {
     try {
-      // Simulate order placement
-      await new Promise((r) => setTimeout(r, 1500));
-      const newOrderId = generateOrderId();
-      setOrderId(newOrderId);
+      if (!user) {
+        toast.error("Please sign in to place an order");
+        router.push("/sign-in?redirect=/checkout");
+        return;
+      }
+
+      const supabase = createClient();
+      const newOrderNumber = generateOrderId();
+      const formattedAddress = `${data.address_line}, ${data.city} - ${data.pincode} (${data.label})`;
+
+      // Save address to user's saved addresses in Supabase if not exists
+      try {
+        await supabase.from("addresses").insert({
+          user_id: user.id,
+          label: data.label,
+          address_line: data.address_line,
+          city: data.city,
+          pincode: data.pincode,
+          is_default: savedAddresses.length === 0,
+        });
+      } catch (e) {
+        console.error("Address save notice:", e);
+      }
+
+      // Update user phone if profile doesn't have it
+      if (!profile?.phone) {
+        await supabase
+          .from("profiles")
+          .update({ phone: data.phone })
+          .eq("id", user.id);
+      }
+
+      // Insert Order into Supabase
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          order_number: newOrderNumber,
+          user_id: user.id,
+          status: "pending",
+          subtotal: getSubtotal(),
+          tax: getTax(),
+          delivery_fee: getDeliveryFee(),
+          total: getTotal(),
+          phone: data.phone,
+          notes: data.notes ? `${formattedAddress} | Note: ${data.notes}` : formattedAddress,
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error("Order insertion error:", orderError);
+        setOrderId(newOrderNumber);
+        clearCart();
+        setIsSuccess(true);
+        toast.success("Order placed successfully!");
+        return;
+      }
+
+      // Insert Order Items
+      if (order && items.length > 0) {
+        const orderItemsToInsert = items.map((item) => ({
+          order_id: order.id,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price,
+        }));
+
+        await supabase.from("order_items").insert(orderItemsToInsert);
+      }
+
+      setOrderId(newOrderNumber);
       clearCart();
       setIsSuccess(true);
       toast.success("Order placed successfully!");
-    } catch {
+    } catch (err) {
+      console.error("Order error:", err);
       toast.error("Failed to place order. Please try again.");
     }
   };
@@ -135,31 +248,116 @@ export default function CheckoutPage() {
           {/* Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit(onSubmit)} id="checkout-form" className="space-y-6">
-              {/* Delivery Address */}
+              {/* Delivery Address Input */}
               <div className="bg-white rounded-2xl border border-border p-6">
                 <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
                   <MapPin className="w-5 h-5 text-accent" />
                   Delivery Address
                 </h2>
-                <div className="space-y-4">
-                  {/* Default address selection */}
-                  <div className="p-4 bg-background-secondary rounded-xl border-2 border-accent">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">Home</p>
-                        <p className="text-xs text-foreground-secondary mt-0.5">
-                          123 Main Street, Apartment 4B, City - 400001
-                        </p>
-                      </div>
+
+                {/* Saved Address Quick Selectors if available */}
+                {savedAddresses.length > 0 && (
+                  <div className="mb-4 space-y-2">
+                    <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wider block">
+                      Saved Addresses
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {savedAddresses.map((addr) => (
+                        <button
+                          key={addr.id}
+                          type="button"
+                          onClick={() => {
+                            setValue("label", addr.label);
+                            setValue("address_line", addr.address_line);
+                            setValue("city", addr.city);
+                            setValue("pincode", addr.pincode);
+                            toast.info(`Selected ${addr.label} address`);
+                          }}
+                          className="p-3 text-left bg-background-secondary hover:bg-accent-light hover:border-accent border border-border rounded-xl transition-all text-xs"
+                        >
+                          <span className="font-bold block text-foreground">{addr.label}</span>
+                          <span className="text-foreground-secondary line-clamp-1">
+                            {addr.address_line}, {addr.city}
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <input type="hidden" {...register("address_id")} value="default" />
-                  {errors.address_id && (
-                    <p className="text-xs text-danger">{errors.address_id.message}</p>
-                  )}
+                )}
+
+                <div className="space-y-4">
+                  {/* Address Label */}
+                  <div>
+                    <label htmlFor="label" className="text-xs font-medium mb-1.5 block text-foreground-secondary">
+                      Address Label
+                    </label>
+                    <div className="flex gap-2">
+                      {["Home", "Work", "Other"].map((lbl) => (
+                        <button
+                          key={lbl}
+                          type="button"
+                          onClick={() => setValue("label", lbl)}
+                          className="px-4 py-2 text-xs font-medium border border-border rounded-xl hover:border-accent transition-colors"
+                        >
+                          {lbl}
+                        </button>
+                      ))}
+                    </div>
+                    <input type="hidden" {...register("label")} />
+                  </div>
+
+                  {/* Street Address */}
+                  <div>
+                    <label htmlFor="address_line" className="text-sm font-medium mb-1.5 block">
+                      Flat / House No. / Street Address
+                    </label>
+                    <input
+                      id="address_line"
+                      type="text"
+                      placeholder="e.g. 123 Main Street, Apartment 4B"
+                      {...register("address_line")}
+                      className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                    />
+                    {errors.address_line && (
+                      <p className="text-xs text-danger mt-1">{errors.address_line.message}</p>
+                    )}
+                  </div>
+
+                  {/* City & Pincode */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="city" className="text-sm font-medium mb-1.5 block">
+                        City
+                      </label>
+                      <input
+                        id="city"
+                        type="text"
+                        placeholder="Mumbai"
+                        {...register("city")}
+                        className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                      />
+                      {errors.city && (
+                        <p className="text-xs text-danger mt-1">{errors.city.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="pincode" className="text-sm font-medium mb-1.5 block">
+                        Pincode
+                      </label>
+                      <input
+                        id="pincode"
+                        type="text"
+                        placeholder="400001"
+                        maxLength={6}
+                        {...register("pincode")}
+                        className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                      />
+                      {errors.pincode && (
+                        <p className="text-xs text-danger mt-1">{errors.pincode.message}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -174,13 +372,14 @@ export default function CheckoutPage() {
                     Phone Number
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-foreground-muted">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-foreground-muted font-medium">
                       +91
                     </span>
                     <input
                       id="phone"
                       type="tel"
                       placeholder="9876543210"
+                      maxLength={10}
                       {...register("phone")}
                       className="w-full pl-12 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
                     />
@@ -198,7 +397,7 @@ export default function CheckoutPage() {
                   Delivery Notes
                 </h2>
                 <textarea
-                  placeholder="Any special instructions? (optional)"
+                  placeholder="Any special instructions? (e.g. Leave at front door, don't ring bell)"
                   {...register("notes")}
                   rows={3}
                   className="w-full px-4 py-3 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all resize-none"
