@@ -11,7 +11,7 @@ export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000
 // Navigation Links
 export const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Menu", href: "/menu" },
+  { label: "Products", href: "/menu" },
   { label: "About Us", href: "/about" },
   { label: "Contact", href: "/contact" },
 ] as const;
@@ -19,7 +19,7 @@ export const NAV_LINKS = [
 // Mobile Navigation
 export const MOBILE_NAV_LINKS = [
   { label: "Home", href: "/", icon: "Home" },
-  { label: "Menu", href: "/menu", icon: "UtensilsCrossed" },
+  { label: "Products", href: "/menu", icon: "Package" },
   { label: "Orders", href: "/orders", icon: "ClipboardList" },
   { label: "Cart", href: "/cart", icon: "ShoppingBag" },
   { label: "Profile", href: "/profile", icon: "User" },

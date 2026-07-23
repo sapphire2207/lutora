@@ -38,6 +38,7 @@ export interface Product {
   ingredients: string[];
   is_available: boolean;
   is_bestseller: boolean;
+  stock_quantity?: number;
   rating: number;
   review_count: number;
   created_at: string;

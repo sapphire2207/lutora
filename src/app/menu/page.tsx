@@ -12,12 +12,17 @@ import {
   Sparkles,
   Utensils,
   UtensilsCrossed,
+  AlertTriangle,
+  Package,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn, formatPrice } from "@/lib/utils";
 import { SEED_PRODUCTS, CATEGORIES } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { Loading } from "@/components/ui/loading";
 import type { Product } from "@/types";
 
 const fadeUp = {
@@ -31,14 +36,47 @@ const categoryIconMap: Record<string, React.ElementType> = {
   Sparkles,
 };
 
-export default function MenuPage() {
+const SORT_OPTIONS = [
+  { value: "popular", label: "Most Popular" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "price-low", label: "Price: Low to High" },
+  { value: "price-high", label: "Price: High to Low" },
+];
+
+export default function ProductsPage() {
+  const [productsList, setProductsList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
   const addItem = useCartStore((s) => s.addItem);
 
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error || !data || data.length === 0) {
+          setProductsList(SEED_PRODUCTS as unknown as any[]);
+        } else {
+          setProductsList(data);
+        }
+      } catch {
+        setProductsList(SEED_PRODUCTS as unknown as any[]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, []);
+
   const filteredProducts = useMemo(() => {
-    let products = [...SEED_PRODUCTS];
+    let products = [...productsList];
 
     // Filter by search
     if (searchQuery) {
@@ -51,7 +89,7 @@ export default function MenuPage() {
 
     // Filter by category
     if (selectedCategory !== "all") {
-      products = products.filter((p) => p.category === selectedCategory);
+      products = products.filter((p) => p.category === selectedCategory || p.category_id === selectedCategory);
     }
 
     // Sort
@@ -63,17 +101,22 @@ export default function MenuPage() {
         products.sort((a, b) => b.price - a.price);
         break;
       case "rating":
-        products.sort((a, b) => b.rating - a.rating);
+        products.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       default:
-        products.sort((a, b) => b.review_count - a.review_count);
+        products.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
     }
 
     return products;
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [productsList, searchQuery, selectedCategory, sortBy]);
 
-  const handleAddToCart = (product: typeof SEED_PRODUCTS[number]) => {
-    addItem(product as unknown as Product);
+  const handleAddToCart = (product: any) => {
+    const stock = product.stock_quantity ?? 50;
+    if (!product.is_available || stock <= 0) {
+      toast.error(`${product.name} is currently out of stock`);
+      return;
+    }
+    addItem(product as Product);
     toast.success(`${product.name} added to cart!`);
   };
 
@@ -83,51 +126,48 @@ export default function MenuPage() {
       <section className="bg-background-secondary border-b border-border">
         <div className="container-app py-8 md:py-12">
           <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-            <h1 className="text-2xl sm:text-3xl font-bold">Our Flavors</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              Our Products
+              <Package className="w-6 h-6 text-accent" />
+            </h1>
             <p className="text-sm text-foreground-secondary mt-1">
               Handcrafted Peri Peri Spicy & Organic Honey Makhna
             </p>
           </motion.div>
 
-          {/* Search & Filters */}
+          {/* Search & Custom Select Filters */}
           <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeUp}
             transition={{ delay: 0.1 }}
-            className="mt-6 flex flex-col sm:flex-row gap-3"
+            className="mt-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
           >
             {/* Search */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
               <input
                 type="text"
-                placeholder="Search makhna flavors..."
+                placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
               />
             </div>
 
-            {/* Sort */}
-            <div className="relative">
-              <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted pointer-events-none" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="pl-10 pr-8 py-2.5 bg-white border border-border rounded-xl text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
-              >
-                <option value="popular">Most Popular</option>
-                <option value="rating">Highest Rated</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
-            </div>
+            {/* Custom Sort Select */}
+            <CustomSelect
+              options={SORT_OPTIONS}
+              value={sortBy}
+              onChange={(val) => setSortBy(val)}
+              icon={<SlidersHorizontal className="w-4 h-4 text-foreground-muted" />}
+              className="w-full sm:w-52"
+            />
           </motion.div>
         </div>
       </section>
 
-      {/* Category Tabs */}
+      {/* Category Filter Tabs */}
       <section className="sticky top-[var(--nav-height)] z-30 bg-white border-b border-border">
         <div className="container-app">
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-3">
@@ -139,9 +179,9 @@ export default function MenuPage() {
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.slug)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all",
+                    "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all cursor-pointer",
                     isSelected
-                      ? "bg-foreground text-white"
+                      ? "bg-foreground text-white shadow-sm"
                       : "bg-background-secondary text-foreground-secondary hover:bg-border-light"
                   )}
                 >
@@ -157,38 +197,47 @@ export default function MenuPage() {
       {/* Products Grid */}
       <section className="py-8 md:py-12">
         <div className="container-app">
-          {filteredProducts.length === 0 ? (
+          {isLoading ? (
+            <Loading fullPage text="Fetching Live Products..." />
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-20">
               <div className="w-16 h-16 mx-auto bg-background-secondary rounded-full flex items-center justify-center mb-3">
                 <UtensilsCrossed className="w-8 h-8 text-foreground-muted" />
               </div>
-              <p className="text-lg font-semibold">No items found</p>
+              <p className="text-lg font-semibold">No products found</p>
               <p className="text-sm text-foreground-secondary mt-1">
-                Try adjusting your search or filters
+                Try adjusting your search or category filters
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {filteredProducts.map((product, index) => {
-                const cat = CATEGORIES.find((c) => c.slug === product.category);
+                const cat = CATEGORIES.find((c) => c.slug === product.category || c.id === product.category_id);
                 const CatIcon = cat ? categoryIconMap[cat.icon] || Utensils : Utensils;
+                const stock = product.stock_quantity ?? 50;
+                const inStock = product.is_available && stock > 0;
+                const ingredients = product.ingredients || ["Premium Makhna", "Special Spices"];
 
                 return (
                   <motion.div
                     key={product.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                   >
                     <div className="group bg-white rounded-2xl border border-border hover:border-accent/30 hover:shadow-xl transition-all duration-300 overflow-hidden">
                       <div className="flex flex-col sm:flex-row">
                         {/* Image */}
                         <Link
-                          href={`/menu/${product.slug}`}
+                          href={`/menu/${product.slug || product.id}`}
                           className="relative w-full sm:w-52 h-52 sm:h-auto bg-background-secondary shrink-0 overflow-hidden"
                         >
                           <Image
-                            src={product.id === "makhna-spicy" ? "/images/makhna-spicy.png" : "/images/makhna-honey.jpg"}
+                            src={
+                              product.slug === "peri-peri-makhna" || product.id === "makhna-spicy"
+                                ? "/images/makhna-spicy.png"
+                                : "/images/makhna-honey.jpg"
+                            }
                             alt={product.name}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -199,12 +248,19 @@ export default function MenuPage() {
                               Bestseller
                             </span>
                           )}
+                          {!inStock && (
+                            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
+                              <span className="px-3 py-1 bg-danger text-white text-xs font-bold uppercase tracking-wider rounded-full flex items-center gap-1">
+                                <AlertTriangle className="w-3.5 h-3.5" /> Out of Stock
+                              </span>
+                            </div>
+                          )}
                         </Link>
 
                         {/* Content */}
                         <div className="flex-1 p-5 flex flex-col justify-between">
                           <div>
-                            <Link href={`/menu/${product.slug}`}>
+                            <Link href={`/menu/${product.slug || product.id}`}>
                               <h3 className="text-lg font-semibold text-foreground group-hover:text-accent transition-colors">
                                 {product.name}
                               </h3>
@@ -218,17 +274,17 @@ export default function MenuPage() {
                               <div className="flex items-center gap-1">
                                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                                 <span className="text-sm font-semibold">
-                                  {product.rating}
+                                  {product.rating || 4.8}
                                 </span>
                                 <span className="text-xs text-foreground-muted">
-                                  ({product.review_count})
+                                  ({product.review_count || 150})
                                 </span>
                               </div>
                               <span className="text-foreground-muted">·</span>
                               <div className="flex items-center gap-1">
                                 <span className="text-xs text-foreground-muted">Spice:</span>
                                 <div className="flex items-center">
-                                  {Array.from({ length: product.spice_level }).map((_, i) => (
+                                  {Array.from({ length: product.spice_level || 3 }).map((_, i) => (
                                     <Flame key={i} className="w-3.5 h-3.5 text-accent fill-accent/20" />
                                   ))}
                                 </div>
@@ -237,7 +293,7 @@ export default function MenuPage() {
 
                             {/* Ingredients Preview */}
                             <div className="flex flex-wrap gap-1.5 mt-3">
-                              {product.ingredients.slice(0, 3).map((ing) => (
+                              {ingredients.slice(0, 3).map((ing: string) => (
                                 <span
                                   key={ing}
                                   className="px-2 py-0.5 bg-background-secondary text-foreground-muted text-[10px] rounded-full"
@@ -245,9 +301,9 @@ export default function MenuPage() {
                                   {ing}
                                 </span>
                               ))}
-                              {product.ingredients.length > 3 && (
+                              {ingredients.length > 3 && (
                                 <span className="px-2 py-0.5 bg-background-secondary text-foreground-muted text-[10px] rounded-full">
-                                  +{product.ingredients.length - 3} more
+                                  +{ingredients.length - 3} more
                                 </span>
                               )}
                             </div>
@@ -255,15 +311,38 @@ export default function MenuPage() {
 
                           {/* Price & Add */}
                           <div className="flex items-center justify-between mt-5 pt-4 border-t border-border-light">
-                            <span className="text-xl font-bold text-foreground">
-                              {formatPrice(product.price)}
-                            </span>
+                            <div>
+                              <span className="text-xl font-bold text-foreground block">
+                                {formatPrice(product.price)}
+                              </span>
+                              {!inStock ? (
+                                <span className="text-[10px] font-semibold text-danger">
+                                  Out of Stock
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-success font-medium">
+                                  In Stock ({stock} available)
+                                </span>
+                              )}
+                            </div>
+
                             <button
                               onClick={() => handleAddToCart(product)}
-                              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-full transition-all hover:shadow-md active:scale-95"
+                              disabled={!inStock}
+                              className={cn(
+                                "inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold rounded-full transition-all active:scale-95",
+                                inStock
+                                  ? "bg-accent hover:bg-accent-hover text-white hover:shadow-md cursor-pointer"
+                                  : "bg-border text-foreground-muted cursor-not-allowed"
+                              )}
                             >
-                              Add
-                              <Plus className="w-4 h-4" />
+                              {inStock ? (
+                                <>
+                                  Add <Plus className="w-4 h-4" />
+                                </>
+                              ) : (
+                                "Sold Out"
+                              )}
                             </button>
                           </div>
                         </div>

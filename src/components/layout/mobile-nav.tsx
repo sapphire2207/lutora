@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Home,
-  UtensilsCrossed,
+  Package,
   ClipboardList,
   ShoppingBag,
   User,
@@ -16,7 +16,7 @@ import { useCartStore } from "@/stores/cart-store";
 
 const TABS = [
   { label: "Home", href: "/", icon: Home },
-  { label: "Menu", href: "/menu", icon: UtensilsCrossed },
+  { label: "Products", href: "/menu", icon: Package },
   { label: "Orders", href: "/orders", icon: ClipboardList },
   { label: "Cart", href: "/cart", icon: ShoppingBag },
   { label: "Profile", href: "/profile", icon: User },
