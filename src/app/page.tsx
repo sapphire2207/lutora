@@ -16,7 +16,7 @@ import {
   Plus,
   Quote,
 } from "lucide-react";
-import { cn, formatPrice, getDiscountedPrice } from "@/lib/utils";
+import { cn, formatPrice, getSellingPrice } from "@/lib/utils";
 import {
   SEED_PRODUCTS,
   TRUST_BADGES,
@@ -215,8 +215,7 @@ function PopularPicksSection() {
   }, []);
 
   const handleAddToCart = (product: Product) => {
-    const finalPrice = getDiscountedPrice(product.price, product.discount_percent);
-    addItem({ ...product, price: finalPrice });
+    addItem(product);
     toast.success(`${product.name} added to cart!`);
   };
 
@@ -358,7 +357,7 @@ function ProductCard({
               {product.discount_percent && product.discount_percent > 0 ? (
                 <div className="flex items-baseline gap-1.5 flex-wrap">
                   <span className="text-lg font-bold text-accent">
-                    {formatPrice(getDiscountedPrice(product.price, product.discount_percent))}
+                    {formatPrice(getSellingPrice(product))}
                   </span>
                   <span className="text-xs text-foreground-muted line-through">
                     {formatPrice(product.price)}

@@ -15,6 +15,15 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
+// Calculate effective selling price for a product
+export function getSellingPrice(product: { price: number; discount_percent?: number }): number {
+  if (!product) return 0;
+  if (!product.discount_percent || product.discount_percent <= 0) {
+    return product.price;
+  }
+  return Math.round(product.price * (1 - product.discount_percent / 100));
+}
+
 // Calculate discounted price
 export function getDiscountedPrice(price: number, discountPercent: number = 0): number {
   if (!discountPercent || discountPercent <= 0) return price;

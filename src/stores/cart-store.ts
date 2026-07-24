@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product, CartItem, CartState } from "@/types";
-import { DELIVERY_FEE, TAX_RATE, FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 import { useCartModalStore } from "@/stores/modal-store";
-import { getDiscountedPrice } from "@/lib/utils";
+import { getSellingPrice } from "@/lib/utils";
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -72,27 +71,16 @@ export const useCartStore = create<CartState>()(
 
       getSubtotal: () => {
         return get().items.reduce((total, item) => {
-          const finalPrice = getDiscountedPrice(
-            item.product.price,
-            item.product.discount_percent
-          );
-          return total + finalPrice * item.quantity;
+          const sellingPrice = getSellingPrice(item.product);
+          return total + sellingPrice * item.quantity;
         }, 0);
       },
 
-      getTax: () => {
-        return Math.round(get().getSubtotal() * TAX_RATE);
-      },
+      getTax: () => 0,
 
-      getDeliveryFee: () => {
-        const subtotal = get().getSubtotal();
-        if (subtotal === 0) return 0;
-        return subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
-      },
+      getDeliveryFee: () => 0,
 
-      getTotal: () => {
-        return get().getSubtotal() + get().getTax() + get().getDeliveryFee();
-      },
+      getTotal: () => get().getSubtotal(),
     }),
     {
       name: "lutora-cart",

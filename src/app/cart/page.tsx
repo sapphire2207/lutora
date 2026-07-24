@@ -12,7 +12,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useState } from "react";
-import { cn, formatPrice, getDiscountedPrice } from "@/lib/utils";
+import { cn, formatPrice, getSellingPrice } from "@/lib/utils";
 import { FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
@@ -110,7 +110,7 @@ export default function CartPage() {
                         </h3>
                         <p className="text-xs text-foreground-muted mt-0.5 flex items-center gap-1.5">
                           <span className="font-semibold text-foreground">
-                            {formatPrice(getDiscountedPrice(item.product.price, item.product.discount_percent))}
+                            {formatPrice(getSellingPrice(item.product))}
                           </span>
                           {item.product.discount_percent && item.product.discount_percent > 0 && (
                             <span className="line-through text-foreground-muted text-[10px]">
@@ -160,7 +160,7 @@ export default function CartPage() {
 
                       {/* Item Total */}
                       <span className="text-sm font-bold">
-                        {formatPrice(getDiscountedPrice(item.product.price, item.product.discount_percent) * item.quantity)}
+                        {formatPrice(getSellingPrice(item.product) * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -191,23 +191,16 @@ export default function CartPage() {
                     <span className="font-medium">{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-foreground-secondary">GST (5%)</span>
-                    <span className="font-medium">{formatPrice(tax)}</span>
+                    <span className="text-foreground-secondary">Delivery</span>
+                    <span className="font-medium text-success">FREE</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-foreground-secondary">Delivery</span>
-                    <span
-                      className={cn(
-                        "font-medium",
-                        deliveryFee === 0 && "text-success"
-                      )}
-                    >
-                      {deliveryFee === 0 ? "FREE" : formatPrice(deliveryFee)}
-                    </span>
+                    <span className="text-foreground-secondary">GST</span>
+                    <span className="font-medium text-success">Included</span>
                   </div>
                   <div className="border-t border-border pt-3 flex justify-between">
                     <span className="font-semibold">Total</span>
-                    <span className="text-lg font-bold">
+                    <span className="text-lg font-bold text-accent">
                       {formatPrice(total)}
                     </span>
                   </div>

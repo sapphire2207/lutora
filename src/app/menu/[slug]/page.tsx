@@ -21,7 +21,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { cn, formatPrice, getDiscountedPrice } from "@/lib/utils";
+import { cn, formatPrice, getDiscountedPrice, getSellingPrice } from "@/lib/utils";
 import { SEED_PRODUCTS } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { useFavouritesStore } from "@/stores/favourites-store";
@@ -361,14 +361,13 @@ export default function ProductDetailPage() {
                 {/* Add to Cart */}
                 <button
                   onClick={() => {
-                    const finalPrice = getDiscountedPrice(product.price, product.discount_percent);
-                    addItem({ ...product, price: finalPrice } as unknown as Product, quantity);
+                    addItem(product as unknown as Product, quantity);
                     toast.success(`${quantity}x ${product.name} added to cart!`);
                   }}
                   className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-full transition-all hover:shadow-lg hover:shadow-accent/20 active:scale-[0.98]"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  Add to Cart — {formatPrice(getDiscountedPrice(product.price, product.discount_percent) * quantity)}
+                  Add to Cart — {formatPrice(getSellingPrice(product) * quantity)}
                 </button>
               </div>
             </div>

@@ -63,9 +63,9 @@ export const SPICE_LEVELS = [
 ] as const;
 
 // Pricing
-export const DELIVERY_FEE = 30;
-export const TAX_RATE = 0.05; // 5% GST
-export const FREE_DELIVERY_THRESHOLD = 299;
+export const DELIVERY_FEE = 0;
+export const TAX_RATE = 0; // 0% GST (Included in price)
+export const FREE_DELIVERY_THRESHOLD = 0;
 
 // Categories (Focused strictly on our 2 signature Makhana flavors)
 export const CATEGORIES = [

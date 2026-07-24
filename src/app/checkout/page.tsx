@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutSchema, type CheckoutFormData } from "@/validators";
 import { useCartStore } from "@/stores/cart-store";
-import { cn, formatPrice, generateOrderId, getDiscountedPrice } from "@/lib/utils";
+import { cn, formatPrice, generateOrderId, getSellingPrice } from "@/lib/utils";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
@@ -244,7 +244,7 @@ export default function CheckoutPage() {
           order_id: order.id,
           product_id: item.product.id,
           quantity: item.quantity,
-          price: getDiscountedPrice(item.product.price, item.product.discount_percent),
+          price: getSellingPrice(item.product),
         }));
 
         await supabase.from("order_items").insert(orderItemsToInsert);
@@ -497,7 +497,7 @@ export default function CheckoutPage() {
                         {item.product.name} × {item.quantity}
                       </span>
                       <span className="font-medium">
-                        {formatPrice(getDiscountedPrice(item.product.price, item.product.discount_percent) * item.quantity)}
+                        {formatPrice(getSellingPrice(item.product) * item.quantity)}
                       </span>
                     </div>
                   ))}
@@ -510,18 +510,16 @@ export default function CheckoutPage() {
                     <span className="font-medium">{formatPrice(getSubtotal())}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-foreground-secondary">GST (5%)</span>
-                    <span className="font-medium">{formatPrice(getTax())}</span>
+                    <span className="text-foreground-secondary">Delivery</span>
+                    <span className="font-medium text-success">FREE</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-foreground-secondary">Delivery</span>
-                    <span className={getDeliveryFee() === 0 ? "text-success font-medium" : "font-medium"}>
-                      {getDeliveryFee() === 0 ? "FREE" : formatPrice(getDeliveryFee())}
-                    </span>
+                    <span className="text-foreground-secondary">GST</span>
+                    <span className="font-medium text-success">Included</span>
                   </div>
                   <div className="border-t border-border pt-3 flex justify-between">
                     <span className="font-semibold">Total</span>
-                    <span className="text-lg font-bold">{formatPrice(getTotal())}</span>
+                    <span className="text-lg font-bold text-accent">{formatPrice(getTotal())}</span>
                   </div>
                 </div>
 

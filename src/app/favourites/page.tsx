@@ -11,7 +11,7 @@ import {
   ShoppingBag,
   Trash2,
 } from "lucide-react";
-import { formatPrice, getDiscountedPrice } from "@/lib/utils";
+import { formatPrice, getSellingPrice } from "@/lib/utils";
 import { useFavouritesStore } from "@/stores/favourites-store";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
@@ -160,7 +160,7 @@ export default function FavouritesPage() {
                             {product.discount_percent && product.discount_percent > 0 ? (
                               <div className="flex items-baseline gap-1.5 flex-wrap">
                                 <span className="text-xl font-bold text-accent">
-                                  {formatPrice(getDiscountedPrice(product.price, product.discount_percent))}
+                                  {formatPrice(getSellingPrice(product))}
                                 </span>
                                 <span className="text-xs text-foreground-muted line-through">
                                   {formatPrice(product.price)}
