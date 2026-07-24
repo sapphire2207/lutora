@@ -88,7 +88,7 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <div className="relative aspect-square rounded-3xl overflow-hidden bg-accent-lighter">
+              <div className="relative aspect-square rounded-3xl overflow-hidden">
                 <Image
                   src="/images/hero-makhna-v2.png"
                   alt="LUTORA premium makhna"

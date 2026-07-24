@@ -140,8 +140,6 @@ function HeroSection() {
             className="order-1 lg:order-2 relative"
           >
             <div className="relative aspect-square max-w-lg mx-auto lg:max-w-none">
-              {/* Decorative circle */}
-              <div className="absolute inset-4 rounded-full bg-accent-lighter/50" />
 
               <Image
                 src="/images/hero-makhna-v2.png"
