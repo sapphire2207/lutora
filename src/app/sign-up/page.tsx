@@ -54,13 +54,34 @@ export default function SignUpPage() {
     try {
       setIsGoogleLoading(true);
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
+      const callbackUrl = `${window.location.origin}/api/auth/callback`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback`,
+          redirectTo: callbackUrl,
+          skipBrowserRedirect: true,
         },
       });
-      if (error) toast.error(error.message);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      if (data?.url) {
+        // Pre-flight request to verify provider state before redirecting browser
+        const res = await fetch(data.url, { method: "GET" });
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}));
+          if (json.msg && json.msg.includes("provider is not enabled")) {
+            toast.error("Google Sign-In is not enabled in Supabase Dashboard. Please enable the Google provider in your Supabase project settings.");
+            return;
+          }
+          toast.error(json.msg || json.error_description || "Google Sign-In is currently unavailable.");
+          return;
+        }
+        window.location.href = data.url;
+      }
     } catch {
       toast.error("Failed to sign in with Google");
     } finally {
