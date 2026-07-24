@@ -21,7 +21,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { cn, formatPrice, getDiscountedPrice, getSellingPrice } from "@/lib/utils";
+import { cn, formatPrice, getDiscountedPrice, getOriginalPrice, getSellingPrice } from "@/lib/utils";
 import { SEED_PRODUCTS } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { useFavouritesStore } from "@/stores/favourites-store";
@@ -33,7 +33,16 @@ import type { Product, Review } from "@/types";
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const seedMatch = SEED_PRODUCTS.find((p) => p.slug === slug || p.id === slug);
+  const cleanSlug = (slug || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const seedMatch = SEED_PRODUCTS.find(
+    (p) =>
+      p.slug === slug ||
+      p.id === slug ||
+      p.name.toLowerCase().replace(/[^a-z0-9]/g, "") === cleanSlug ||
+      (cleanSlug.includes("spicy") && p.id === "makhna-spicy") ||
+      (cleanSlug.includes("peri") && p.id === "makhna-spicy") ||
+      (cleanSlug.includes("honey") && p.id === "makhna-honey")
+  );
   const [product, setProduct] = useState<any>(seedMatch || null);
   const [quantity, setQuantity] = useState(1);
   const addItem = useCartStore((s) => s.addItem);
@@ -52,12 +61,16 @@ export default function ProductDetailPage() {
       try {
         const supabase = createClient();
         
-        // Load live product data from database
-        const { data: dbProduct } = await supabase
-          .from("products")
-          .select("*")
-          .or(`slug.eq.${slug},id.eq.${slug}`)
-          .maybeSingle();
+        // Fetch all products to find best match
+        const { data: dbProducts } = await supabase.from("products").select("*");
+        const dbProduct = dbProducts?.find((p) => 
+          p.id === slug || 
+          p.slug === slug || 
+          p.name.toLowerCase().replace(/[^a-z0-9]/g, "") === cleanSlug ||
+          (cleanSlug.includes("spicy") && p.name.toLowerCase().includes("spicy")) ||
+          (cleanSlug.includes("peri") && p.name.toLowerCase().includes("peri")) ||
+          (cleanSlug.includes("honey") && p.name.toLowerCase().includes("honey"))
+        );
 
         const activeProd = dbProduct || seedMatch;
         if (dbProduct) {
@@ -295,10 +308,10 @@ export default function ProductDetailPage() {
               {product.discount_percent && product.discount_percent > 0 ? (
                 <>
                   <span className="text-3xl sm:text-4xl font-bold text-accent">
-                    {formatPrice(getDiscountedPrice(product.price, product.discount_percent))}
+                    {formatPrice(getSellingPrice(product))}
                   </span>
                   <span className="text-lg text-foreground-muted line-through">
-                    {formatPrice(product.price)}
+                    {formatPrice(getOriginalPrice(product))}
                   </span>
                   <span className="text-xs font-bold text-white bg-accent px-2.5 py-1 rounded-full">
                     {product.discount_percent}% OFF

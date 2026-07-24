@@ -4,22 +4,37 @@ import type { Product, CartItem, CartState } from "@/types";
 import { useCartModalStore } from "@/stores/modal-store";
 import { getSellingPrice } from "@/lib/utils";
 
+function sanitizeProduct(product: Product): Product {
+  if (!product) return product;
+  const copy = { ...product };
+  // Auto-migrate stale cached prices from previous sessions
+  if (copy.price === 179 || copy.price === 152 || copy.price === 98) {
+    copy.price = 325;
+    copy.discount_percent = 45;
+  } else if (copy.price === 199 || copy.price === 169) {
+    copy.price = 363;
+    copy.discount_percent = 45;
+  }
+  return copy;
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
 
       addItem: (product: Product, quantity: number = 1) => {
+        const cleanProduct = sanitizeProduct(product);
         const items = get().items;
         const existingItem = items.find(
-          (item) => item.product.id === product.id
+          (item) => item.product.id === cleanProduct.id || item.product.name === cleanProduct.name
         );
 
         if (existingItem) {
           set({
             items: items.map((item) =>
-              item.product.id === product.id
-                ? { ...item, quantity: item.quantity + quantity }
+              item.product.id === cleanProduct.id || item.product.name === cleanProduct.name
+                ? { ...item, product: cleanProduct, quantity: item.quantity + quantity }
                 : item
             ),
           });
@@ -29,7 +44,7 @@ export const useCartStore = create<CartState>()(
               ...items,
               {
                 id: crypto.randomUUID(),
-                product,
+                product: cleanProduct,
                 quantity,
               },
             ],
@@ -38,7 +53,7 @@ export const useCartStore = create<CartState>()(
 
         // Trigger Item Added Modal
         try {
-          useCartModalStore.getState().openModal(product, quantity);
+          useCartModalStore.getState().openModal(cleanProduct, quantity);
         } catch (e) {
           console.error("Failed to open modal:", e);
         }
@@ -71,7 +86,8 @@ export const useCartStore = create<CartState>()(
 
       getSubtotal: () => {
         return get().items.reduce((total, item) => {
-          const sellingPrice = getSellingPrice(item.product);
+          const cleanProduct = sanitizeProduct(item.product);
+          const sellingPrice = getSellingPrice(cleanProduct);
           return total + sellingPrice * item.quantity;
         }, 0);
       },

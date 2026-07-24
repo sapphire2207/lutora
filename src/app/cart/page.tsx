@@ -12,7 +12,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useState } from "react";
-import { cn, formatPrice, getSellingPrice } from "@/lib/utils";
+import { cn, formatPrice, getOriginalPrice, getSellingPrice } from "@/lib/utils";
 import { FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
@@ -114,7 +114,7 @@ export default function CartPage() {
                           </span>
                           {item.product.discount_percent && item.product.discount_percent > 0 && (
                             <span className="line-through text-foreground-muted text-[10px]">
-                              {formatPrice(item.product.price)}
+                              {formatPrice(getOriginalPrice(item.product))}
                             </span>
                           )}
                           <span>each</span>
