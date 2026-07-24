@@ -194,9 +194,17 @@ export default function AdminOrdersPage() {
                           className="w-40"
                         />
                       </div>
-                      <p className="text-xs text-foreground-muted mt-1">
-                        {customerName} · {itemSummary}
-                      </p>
+                      <div className="space-y-1 mt-1 text-xs">
+                        <p className="text-foreground-secondary font-medium">
+                          <span className="font-semibold text-foreground">{customerName}</span> · {itemSummary}
+                        </p>
+                        {order.notes && (
+                          <p className="text-[11px] text-foreground-muted line-clamp-1 flex items-center gap-1">
+                            <span className="font-semibold text-accent shrink-0">Delivery:</span>
+                            <span className="truncate">{order.notes.split(" | Note: ")[0]}</span>
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
 

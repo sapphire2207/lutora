@@ -16,7 +16,7 @@ import {
   Plus,
   Quote,
 } from "lucide-react";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatPrice, getDiscountedPrice } from "@/lib/utils";
 import {
   SEED_PRODUCTS,
   TRUST_BADGES,
@@ -26,8 +26,9 @@ import {
 } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { useFavouritesStore } from "@/stores/favourites-store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import type { Product } from "@/types";
 
 // Animation variants
@@ -150,23 +151,7 @@ function HeroSection() {
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
 
-              {/* Floating badge */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.8 }}
-                className="absolute top-8 right-4 md:right-0 z-20 bg-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 bg-success-light rounded-full flex items-center justify-center">
-                  <Leaf className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold">100%</p>
-                  <p className="text-xs text-foreground-muted">
-                    Natural
-                  </p>
-                </div>
-              </motion.div>
+
             </div>
           </motion.div>
         </div>
@@ -180,9 +165,58 @@ function HeroSection() {
    =========================== */
 function PopularPicksSection() {
   const addItem = useCartStore((s) => s.addItem);
+  const [productsList, setProductsList] = useState<any[]>(SEED_PRODUCTS as unknown as any[]);
 
-  const handleAddToCart = (product: typeof SEED_PRODUCTS[number]) => {
-    addItem(product as unknown as Product);
+  useEffect(() => {
+    async function loadProductsAndReviews() {
+      try {
+        const supabase = createClient();
+        const [{ data: productsData }, { data: reviewsData }] = await Promise.all([
+          supabase.from("products").select("*").order("created_at", { ascending: false }),
+          supabase.from("reviews").select("product_id, rating"),
+        ]);
+
+        const rawProducts = (productsData && productsData.length > 0) ? productsData : (SEED_PRODUCTS as unknown as any[]);
+
+        const reviewStatsMap: Record<string, { count: number; sumRating: number }> = {};
+        if (reviewsData) {
+          reviewsData.forEach((rev) => {
+            if (!reviewStatsMap[rev.product_id]) {
+              reviewStatsMap[rev.product_id] = { count: 0, sumRating: 0 };
+            }
+            reviewStatsMap[rev.product_id].count += 1;
+            reviewStatsMap[rev.product_id].sumRating += Number(rev.rating || 5);
+          });
+        }
+
+        const mergedProducts = rawProducts.map((p) => {
+          const stats = reviewStatsMap[p.id] || reviewStatsMap[p.slug];
+          if (stats) {
+            const baseCount = p.review_count || 0;
+            const baseRating = Number(p.rating || 4.8);
+            const totalCount = baseCount + stats.count;
+            const avgRating = Number(((baseRating * baseCount + stats.sumRating) / totalCount).toFixed(1));
+            return {
+              ...p,
+              review_count: totalCount,
+              rating: avgRating,
+            };
+          }
+          return p;
+        });
+
+        setProductsList(mergedProducts);
+      } catch {
+        setProductsList(SEED_PRODUCTS as unknown as any[]);
+      }
+    }
+
+    loadProductsAndReviews();
+  }, []);
+
+  const handleAddToCart = (product: Product) => {
+    const finalPrice = getDiscountedPrice(product.price, product.discount_percent);
+    addItem({ ...product, price: finalPrice });
     toast.success(`${product.name} added to cart!`);
   };
 
@@ -221,7 +255,7 @@ function PopularPicksSection() {
             variants={fadeUp}
             className="grid grid-cols-1 sm:grid-cols-2 gap-5"
           >
-            {SEED_PRODUCTS.map((product) => (
+            {productsList.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -320,9 +354,25 @@ function ProductCard({
 
           {/* Price & Add */}
           <div className="flex items-center justify-between mt-4">
-            <span className="text-lg font-bold text-foreground">
-              {formatPrice(product.price)}
-            </span>
+            <div>
+              {product.discount_percent && product.discount_percent > 0 ? (
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-lg font-bold text-accent">
+                    {formatPrice(getDiscountedPrice(product.price, product.discount_percent))}
+                  </span>
+                  <span className="text-xs text-foreground-muted line-through">
+                    {formatPrice(product.price)}
+                  </span>
+                  <span className="text-[10px] font-bold text-success bg-success-light px-1.5 py-0.5 rounded">
+                    {product.discount_percent}% OFF
+                  </span>
+                </div>
+              ) : (
+                <span className="text-lg font-bold text-foreground">
+                  {formatPrice(product.price)}
+                </span>
+              )}
+            </div>
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -399,6 +449,39 @@ function WhyLutoraSection() {
    TESTIMONIALS SECTION
    =========================== */
 function TestimonialsSection() {
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadTopReviews() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("reviews")
+          .select("*")
+          .gte("rating", 4)
+          .order("created_at", { ascending: false })
+          .limit(4);
+
+        if (!error && data && data.length > 0) {
+          setReviews(data);
+        }
+      } catch (err) {
+        console.error("Error loading home reviews:", err);
+      }
+    }
+    loadTopReviews();
+  }, []);
+
+  const displayTestimonials = reviews.length > 0
+    ? reviews.map((r) => ({
+        id: r.id,
+        name: r.user_name || "Verified Customer",
+        avatar: (r.user_name || "C")[0].toUpperCase(),
+        rating: r.rating,
+        text: r.comment,
+      }))
+    : TESTIMONIALS;
+
   return (
     <section className="py-12 md:py-20">
       <div className="container-app">
@@ -421,21 +504,23 @@ function TestimonialsSection() {
             variants={fadeUp}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10"
           >
-            {TESTIMONIALS.map((t) => (
+            {displayTestimonials.map((t) => (
               <div
                 key={t.id}
-                className="bg-white rounded-2xl border border-border p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl border border-border p-6 hover:shadow-md transition-shadow flex flex-col justify-between"
               >
-                <Quote className="w-8 h-8 text-accent-lighter mb-3" />
-                <p className="text-sm text-foreground-secondary leading-relaxed">
-                  &quot;{t.text}&quot;
-                </p>
+                <div>
+                  <Quote className="w-8 h-8 text-accent-lighter mb-3" />
+                  <p className="text-sm text-foreground-secondary leading-relaxed">
+                    &quot;{t.text}&quot;
+                  </p>
+                </div>
                 <div className="flex items-center gap-3 mt-5 pt-4 border-t border-border-light">
-                  <div className="w-9 h-9 rounded-full bg-accent-light text-accent text-xs font-bold flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full bg-accent-light text-accent text-xs font-bold flex items-center justify-center shrink-0">
                     {t.avatar}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{t.name}</p>
+                    <p className="text-sm font-medium line-clamp-1">{t.name}</p>
                     <div className="flex items-center gap-0.5 mt-0.5">
                       {Array.from({ length: t.rating }).map((_, i) => (
                         <Star

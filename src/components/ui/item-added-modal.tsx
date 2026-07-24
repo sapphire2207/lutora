@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, ArrowRight, ShoppingBag, ClipboardList } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getDiscountedPrice } from "@/lib/utils";
 import { useCartModalStore } from "@/stores/modal-store";
 import { useEffect } from "react";
 
@@ -87,7 +87,7 @@ export function ItemAddedModal() {
                   {product.name}
                 </h4>
                 <p className="text-xs text-foreground-secondary mt-0.5 font-medium">
-                  Qty: {quantity} · {formatPrice(product.price * quantity)}
+                  Qty: {quantity} · {formatPrice(getDiscountedPrice(product.price, product.discount_percent) * quantity)}
                 </p>
               </div>
             </div>

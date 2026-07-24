@@ -32,6 +32,7 @@ export interface Product {
   slug: string;
   description: string;
   price: number;
+  discount_percent?: number;
   category_id: string;
   category?: Category;
   spice_level: number;
@@ -78,9 +79,12 @@ export interface Address {
   id: string;
   user_id: string;
   label: string;
-  address_line: string;
-  city: string;
+  flat_house_building: string;
+  area_street_sector: string;
+  landmark?: string | null;
   pincode: string;
+  city: string;
+  state: string;
   is_default: boolean;
   created_at: string;
 }
@@ -133,6 +137,7 @@ export interface OrderTimeline {
 export interface Review {
   id: string;
   user_id: string;
+  user_name?: string;
   product_id: string;
   rating: number;
   comment: string;
@@ -194,16 +199,25 @@ export interface SignUpFormData {
 }
 
 export interface CheckoutFormData {
-  address_id: string;
+  label: string;
+  flat_house_building: string;
+  area_street_sector: string;
+  landmark?: string;
+  pincode: string;
+  city: string;
+  state: string;
   phone: string;
-  notes: string;
+  notes?: string;
 }
 
 export interface AddressFormData {
   label: string;
-  address_line: string;
-  city: string;
+  flat_house_building: string;
+  area_street_sector: string;
+  landmark?: string;
   pincode: string;
+  city: string;
+  state: string;
   is_default: boolean;
 }
 

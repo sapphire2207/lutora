@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutSchema, type CheckoutFormData } from "@/validators";
 import { useCartStore } from "@/stores/cart-store";
-import { cn, formatPrice, generateOrderId } from "@/lib/utils";
+import { cn, formatPrice, generateOrderId, getDiscountedPrice } from "@/lib/utils";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
@@ -42,9 +42,12 @@ export default function CheckoutPage() {
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       label: "Home",
-      address_line: "",
-      city: "Mumbai",
+      flat_house_building: "",
+      area_street_sector: "",
+      landmark: "",
       pincode: "400001",
+      city: "Mumbai",
+      state: "Maharashtra",
       phone: "",
       notes: "",
     },
@@ -72,10 +75,13 @@ export default function CheckoutPage() {
             setSavedAddresses(data);
             // Auto fill first address
             const first = data[0];
-            setValue("label", first.label);
-            setValue("address_line", first.address_line);
-            setValue("city", first.city);
-            setValue("pincode", first.pincode);
+            setValue("label", first.label || "Home");
+            setValue("flat_house_building", first.flat_house_building || first.address_line || "");
+            setValue("area_street_sector", first.area_street_sector || "");
+            setValue("landmark", first.landmark || "");
+            setValue("city", first.city || "");
+            setValue("state", first.state || "Maharashtra");
+            setValue("pincode", first.pincode || "");
           }
         } catch (err) {
           console.error("Error loading addresses:", err);
@@ -160,13 +166,14 @@ export default function CheckoutPage() {
 
       const supabase = createClient();
       const newOrderNumber = generateOrderId();
-      const formattedAddress = `${data.address_line}, ${data.city} - ${data.pincode} (${data.label})`;
+      const landmarkText = data.landmark ? `, Landmark: ${data.landmark}` : "";
+      const formattedAddress = `${data.flat_house_building}, ${data.area_street_sector}${landmarkText}, ${data.city}, ${data.state} - ${data.pincode} (${data.label})`;
 
       // Check if address already exists in user's saved addresses before inserting
       const isDuplicateAddress = savedAddresses.some(
         (addr) =>
           addr.label?.trim().toLowerCase() === data.label?.trim().toLowerCase() &&
-          addr.address_line?.trim().toLowerCase() === data.address_line?.trim().toLowerCase() &&
+          (addr.flat_house_building || addr.address_line)?.trim().toLowerCase() === data.flat_house_building?.trim().toLowerCase() &&
           addr.city?.trim().toLowerCase() === data.city?.trim().toLowerCase() &&
           addr.pincode?.trim() === data.pincode?.trim()
       );
@@ -178,9 +185,12 @@ export default function CheckoutPage() {
             .insert({
               user_id: user.id,
               label: data.label,
-              address_line: data.address_line,
-              city: data.city,
+              flat_house_building: data.flat_house_building,
+              area_street_sector: data.area_street_sector,
+              landmark: data.landmark || null,
               pincode: data.pincode,
+              city: data.city,
+              state: data.state,
               is_default: savedAddresses.length === 0,
             })
             .select()
@@ -234,7 +244,7 @@ export default function CheckoutPage() {
           order_id: order.id,
           product_id: item.product.id,
           quantity: item.quantity,
-          price: item.product.price,
+          price: getDiscountedPrice(item.product.price, item.product.discount_percent),
         }));
 
         await supabase.from("order_items").insert(orderItemsToInsert);
@@ -287,17 +297,20 @@ export default function CheckoutPage() {
                           key={addr.id}
                           type="button"
                           onClick={() => {
-                            setValue("label", addr.label);
-                            setValue("address_line", addr.address_line);
-                            setValue("city", addr.city);
-                            setValue("pincode", addr.pincode);
+                            setValue("label", addr.label || "Home");
+                            setValue("flat_house_building", addr.flat_house_building || addr.address_line || "");
+                            setValue("area_street_sector", addr.area_street_sector || "");
+                            setValue("landmark", addr.landmark || "");
+                            setValue("city", addr.city || "");
+                            setValue("state", addr.state || "Maharashtra");
+                            setValue("pincode", addr.pincode || "");
                             toast.info(`Selected ${addr.label} address`);
                           }}
                           className="p-3 text-left bg-background-secondary hover:bg-accent-light hover:border-accent border border-border rounded-xl transition-all text-xs"
                         >
                           <span className="font-bold block text-foreground">{addr.label}</span>
                           <span className="text-foreground-secondary line-clamp-1">
-                            {addr.address_line}, {addr.city}
+                            {addr.flat_house_building || addr.address_line}, {addr.city}
                           </span>
                         </button>
                       ))}
@@ -334,28 +347,79 @@ export default function CheckoutPage() {
                     <input type="hidden" {...register("label")} />
                   </div>
 
-                  {/* Street Address */}
+                  {/* 1 - Flat / House No / Building / Company / Apartment */}
                   <div>
-                    <label htmlFor="address_line" className="text-sm font-medium mb-1.5 block">
-                      Flat / House No. / Street Address
+                    <label htmlFor="flat_house_building" className="text-sm font-medium mb-1.5 block">
+                      Flat No., House No., Building, Company, Apartment <span className="text-danger">*</span>
                     </label>
                     <input
-                      id="address_line"
+                      id="flat_house_building"
                       type="text"
-                      placeholder="e.g. 123 Main Street, Apartment 4B"
-                      {...register("address_line")}
+                      placeholder="e.g. Flat 402, Green Heights, Tech Park"
+                      {...register("flat_house_building")}
                       className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
                     />
-                    {errors.address_line && (
-                      <p className="text-xs text-danger mt-1">{errors.address_line.message}</p>
+                    {errors.flat_house_building && (
+                      <p className="text-xs text-danger mt-1">{errors.flat_house_building.message}</p>
                     )}
                   </div>
 
-                  {/* City & Pincode */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* 2 - Area / Street / Sector / Village */}
+                  <div>
+                    <label htmlFor="area_street_sector" className="text-sm font-medium mb-1.5 block">
+                      Area, Street, Sector, Village <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      id="area_street_sector"
+                      type="text"
+                      placeholder="e.g. Sector 15, MG Road"
+                      {...register("area_street_sector")}
+                      className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                    />
+                    {errors.area_street_sector && (
+                      <p className="text-xs text-danger mt-1">{errors.area_street_sector.message}</p>
+                    )}
+                  </div>
+
+                  {/* 3 - Landmark */}
+                  <div>
+                    <label htmlFor="landmark" className="text-sm font-medium mb-1.5 block">
+                      Landmark <span className="text-xs text-foreground-muted font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      id="landmark"
+                      type="text"
+                      placeholder="e.g. Near City Hospital or Opposite Metro Station"
+                      {...register("landmark")}
+                      className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                    />
+                    {errors.landmark && (
+                      <p className="text-xs text-danger mt-1">{errors.landmark.message}</p>
+                    )}
+                  </div>
+
+                  {/* 4 & 5 & 6 - Pincode, City, State */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="pincode" className="text-sm font-medium mb-1.5 block">
+                        Pincode <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        id="pincode"
+                        type="text"
+                        placeholder="400001"
+                        maxLength={6}
+                        {...register("pincode")}
+                        className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                      />
+                      {errors.pincode && (
+                        <p className="text-xs text-danger mt-1">{errors.pincode.message}</p>
+                      )}
+                    </div>
+
                     <div>
                       <label htmlFor="city" className="text-sm font-medium mb-1.5 block">
-                        City
+                        Town / City <span className="text-danger">*</span>
                       </label>
                       <input
                         id="city"
@@ -370,19 +434,18 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <label htmlFor="pincode" className="text-sm font-medium mb-1.5 block">
-                        Pincode
+                      <label htmlFor="state" className="text-sm font-medium mb-1.5 block">
+                        State <span className="text-danger">*</span>
                       </label>
                       <input
-                        id="pincode"
+                        id="state"
                         type="text"
-                        placeholder="400001"
-                        maxLength={6}
-                        {...register("pincode")}
+                        placeholder="Maharashtra"
+                        {...register("state")}
                         className="w-full px-4 py-2.5 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
                       />
-                      {errors.pincode && (
-                        <p className="text-xs text-danger mt-1">{errors.pincode.message}</p>
+                      {errors.state && (
+                        <p className="text-xs text-danger mt-1">{errors.state.message}</p>
                       )}
                     </div>
                   </div>
@@ -434,7 +497,7 @@ export default function CheckoutPage() {
                         {item.product.name} × {item.quantity}
                       </span>
                       <span className="font-medium">
-                        {formatPrice(item.product.price * item.quantity)}
+                        {formatPrice(getDiscountedPrice(item.product.price, item.product.discount_percent) * item.quantity)}
                       </span>
                     </div>
                   ))}

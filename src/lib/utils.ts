@@ -15,6 +15,12 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
+// Calculate discounted price
+export function getDiscountedPrice(price: number, discountPercent: number = 0): number {
+  if (!discountPercent || discountPercent <= 0) return price;
+  return Math.round(price * (1 - discountPercent / 100));
+}
+
 // Format date
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat("en-IN", {

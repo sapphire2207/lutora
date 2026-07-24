@@ -47,31 +47,54 @@ export const addressSchema = z.object({
     .string()
     .min(1, "Label is required")
     .max(30, "Label must be less than 30 characters"),
-  address_line: z
+  flat_house_building: z
     .string()
-    .min(1, "Address is required")
-    .min(10, "Please enter a complete address")
-    .max(200, "Address must be less than 200 characters"),
-  city: z
+    .min(1, "Flat / House / Building is required")
+    .max(150, "Must be less than 150 characters"),
+  area_street_sector: z
     .string()
-    .min(1, "City is required")
-    .max(50, "City must be less than 50 characters"),
+    .min(1, "Area / Street / Sector is required")
+    .max(150, "Must be less than 150 characters"),
+  landmark: z.string().max(100, "Landmark must be less than 100 characters").optional(),
   pincode: z
     .string()
     .min(1, "Pincode is required")
     .regex(/^\d{6}$/, "Please enter a valid 6-digit pincode"),
+  city: z
+    .string()
+    .min(1, "Town / City is required")
+    .max(50, "City must be less than 50 characters"),
+  state: z
+    .string()
+    .min(1, "State is required")
+    .max(50, "State must be less than 50 characters"),
   is_default: z.boolean().default(false),
 });
 
 // --- Checkout Validator ---
 export const checkoutSchema = z.object({
   label: z.string().min(1, "Address label is required"),
-  address_line: z.string().min(5, "Please enter your full street address"),
-  city: z.string().min(2, "Please enter your city"),
+  flat_house_building: z
+    .string()
+    .min(1, "Flat / House / Building is required")
+    .max(150, "Must be less than 150 characters"),
+  area_street_sector: z
+    .string()
+    .min(1, "Area / Street / Sector is required")
+    .max(150, "Must be less than 150 characters"),
+  landmark: z.string().max(100, "Landmark must be less than 100 characters").optional(),
   pincode: z
     .string()
     .min(1, "Pincode is required")
     .regex(/^\d{6}$/, "Please enter a valid 6-digit pincode"),
+  city: z
+    .string()
+    .min(1, "Town / City is required")
+    .max(50, "City must be less than 50 characters"),
+  state: z
+    .string()
+    .min(1, "State is required")
+    .max(50, "State must be less than 50 characters"),
   phone: z
     .string()
     .min(1, "Phone number is required")

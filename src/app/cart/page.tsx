@@ -12,7 +12,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useState } from "react";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatPrice, getDiscountedPrice } from "@/lib/utils";
 import { FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
@@ -108,8 +108,16 @@ export default function CartPage() {
                         <h3 className="text-sm font-semibold line-clamp-1">
                           {item.product.name}
                         </h3>
-                        <p className="text-xs text-foreground-muted mt-0.5">
-                          {formatPrice(item.product.price)} each
+                        <p className="text-xs text-foreground-muted mt-0.5 flex items-center gap-1.5">
+                          <span className="font-semibold text-foreground">
+                            {formatPrice(getDiscountedPrice(item.product.price, item.product.discount_percent))}
+                          </span>
+                          {item.product.discount_percent && item.product.discount_percent > 0 && (
+                            <span className="line-through text-foreground-muted text-[10px]">
+                              {formatPrice(item.product.price)}
+                            </span>
+                          )}
+                          <span>each</span>
                         </p>
                       </div>
                       <button
@@ -152,7 +160,7 @@ export default function CartPage() {
 
                       {/* Item Total */}
                       <span className="text-sm font-bold">
-                        {formatPrice(item.product.price * item.quantity)}
+                        {formatPrice(getDiscountedPrice(item.product.price, item.product.discount_percent) * item.quantity)}
                       </span>
                     </div>
                   </div>

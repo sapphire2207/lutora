@@ -17,7 +17,7 @@ import {
   Heart,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatPrice, getDiscountedPrice } from "@/lib/utils";
 import { SEED_PRODUCTS, CATEGORIES } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { useFavouritesStore } from "@/stores/favourites-store";
@@ -54,19 +54,45 @@ export default function ProductsPage() {
   const addItem = useCartStore((s) => s.addItem);
 
   useEffect(() => {
-    async function loadProducts() {
+    async function loadProductsAndReviews() {
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .order("created_at", { ascending: false });
+        const [{ data: productsData }, { data: reviewsData }] = await Promise.all([
+          supabase.from("products").select("*").order("created_at", { ascending: false }),
+          supabase.from("reviews").select("product_id, rating"),
+        ]);
 
-        if (error || !data || data.length === 0) {
-          setProductsList(SEED_PRODUCTS as unknown as any[]);
-        } else {
-          setProductsList(data);
+        const rawProducts = (productsData && productsData.length > 0) ? productsData : (SEED_PRODUCTS as unknown as any[]);
+
+        // Aggregate live reviews stats per product
+        const reviewStatsMap: Record<string, { count: number; sumRating: number }> = {};
+        if (reviewsData) {
+          reviewsData.forEach((rev) => {
+            if (!reviewStatsMap[rev.product_id]) {
+              reviewStatsMap[rev.product_id] = { count: 0, sumRating: 0 };
+            }
+            reviewStatsMap[rev.product_id].count += 1;
+            reviewStatsMap[rev.product_id].sumRating += Number(rev.rating || 5);
+          });
         }
+
+        const mergedProducts = rawProducts.map((p) => {
+          const stats = reviewStatsMap[p.id] || reviewStatsMap[p.slug];
+          if (stats) {
+            const baseCount = p.review_count || 0;
+            const baseRating = Number(p.rating || 4.8);
+            const totalCount = baseCount + stats.count;
+            const avgRating = Number(((baseRating * baseCount + stats.sumRating) / totalCount).toFixed(1));
+            return {
+              ...p,
+              review_count: totalCount,
+              rating: avgRating,
+            };
+          }
+          return p;
+        });
+
+        setProductsList(mergedProducts);
       } catch {
         setProductsList(SEED_PRODUCTS as unknown as any[]);
       } finally {
@@ -74,7 +100,7 @@ export default function ProductsPage() {
       }
     }
 
-    loadProducts();
+    loadProductsAndReviews();
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -304,15 +330,29 @@ export default function ProductsPage() {
                           {/* Price & Add */}
                           <div className="flex items-center justify-between mt-5 pt-4 border-t border-border-light">
                             <div>
-                              <span className="text-xl font-bold text-foreground block">
-                                {formatPrice(product.price)}
-                              </span>
+                              {product.discount_percent && product.discount_percent > 0 ? (
+                                <div className="flex items-baseline gap-1.5 flex-wrap">
+                                  <span className="text-xl font-bold text-accent">
+                                    {formatPrice(getDiscountedPrice(product.price, product.discount_percent))}
+                                  </span>
+                                  <span className="text-xs text-foreground-muted line-through">
+                                    {formatPrice(product.price)}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-success bg-success-light px-1.5 py-0.5 rounded">
+                                    {product.discount_percent}% OFF
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xl font-bold text-foreground block">
+                                  {formatPrice(product.price)}
+                                </span>
+                              )}
                               {!inStock ? (
-                                <span className="text-[10px] font-semibold text-danger">
+                                <span className="text-[10px] font-semibold text-danger block mt-0.5">
                                   Out of Stock
                                 </span>
                               ) : (
-                                <span className="text-[10px] text-success font-medium">
+                                <span className="text-[10px] text-success font-medium block mt-0.5">
                                   In Stock ({stock} available)
                                 </span>
                               )}

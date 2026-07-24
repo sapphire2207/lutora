@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { Product, CartItem, CartState } from "@/types";
 import { DELIVERY_FEE, TAX_RATE, FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 import { useCartModalStore } from "@/stores/modal-store";
+import { getDiscountedPrice } from "@/lib/utils";
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -70,10 +71,13 @@ export const useCartStore = create<CartState>()(
       },
 
       getSubtotal: () => {
-        return get().items.reduce(
-          (total, item) => total + item.product.price * item.quantity,
-          0
-        );
+        return get().items.reduce((total, item) => {
+          const finalPrice = getDiscountedPrice(
+            item.product.price,
+            item.product.discount_percent
+          );
+          return total + finalPrice * item.quantity;
+        }, 0);
       },
 
       getTax: () => {

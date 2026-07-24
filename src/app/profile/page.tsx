@@ -47,8 +47,11 @@ export default function ProfilePage() {
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [newLabel, setNewLabel] = useState("Home");
-  const [newAddressLine, setNewAddressLine] = useState("");
+  const [newFlatHouseBuilding, setNewFlatHouseBuilding] = useState("");
+  const [newAreaStreetSector, setNewAreaStreetSector] = useState("");
+  const [newLandmark, setNewLandmark] = useState("");
   const [newCity, setNewCity] = useState("Mumbai");
+  const [newState, setNewState] = useState("Maharashtra");
   const [newPincode, setNewPincode] = useState("400001");
   const [isSavingAddress, setIsSavingAddress] = useState(false);
 
@@ -118,8 +121,8 @@ export default function ProfilePage() {
   // Handle Add Address
   const handleAddAddress = async () => {
     if (!user) return;
-    if (!newAddressLine || !newCity || !newPincode) {
-      toast.error("Please fill in all address fields");
+    if (!newFlatHouseBuilding || !newAreaStreetSector || !newCity || !newState || !newPincode) {
+      toast.error("Please fill in all required address fields");
       return;
     }
 
@@ -132,8 +135,11 @@ export default function ProfilePage() {
         .insert({
           user_id: user.id,
           label: newLabel,
-          address_line: newAddressLine,
+          flat_house_building: newFlatHouseBuilding,
+          area_street_sector: newAreaStreetSector,
+          landmark: newLandmark || null,
           city: newCity,
+          state: newState,
           pincode: newPincode,
           is_default: isFirst,
         })
@@ -146,7 +152,9 @@ export default function ProfilePage() {
         toast.success("Address added!");
         setAddresses([data, ...addresses]);
         setIsAddingAddress(false);
-        setNewAddressLine("");
+        setNewFlatHouseBuilding("");
+        setNewAreaStreetSector("");
+        setNewLandmark("");
       }
     } catch {
       toast.error("Failed to save address");
@@ -400,23 +408,46 @@ export default function ProfilePage() {
 
               <input
                 type="text"
-                placeholder="Flat / Building / Street Address"
-                value={newAddressLine}
-                onChange={(e) => setNewAddressLine(e.target.value)}
+                placeholder="Flat / House No. / Building / Apartment *"
+                value={newFlatHouseBuilding}
+                onChange={(e) => setNewFlatHouseBuilding(e.target.value)}
                 className="w-full px-4 py-2 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
               />
 
-              <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                placeholder="Area / Street / Sector / Village *"
+                value={newAreaStreetSector}
+                onChange={(e) => setNewAreaStreetSector(e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+              />
+
+              <input
+                type="text"
+                placeholder="Landmark (Optional)"
+                value={newLandmark}
+                onChange={(e) => setNewLandmark(e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+              />
+
+              <div className="grid grid-cols-3 gap-2">
                 <input
                   type="text"
-                  placeholder="City"
+                  placeholder="City *"
                   value={newCity}
                   onChange={(e) => setNewCity(e.target.value)}
                   className="w-full px-4 py-2 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                 />
                 <input
                   type="text"
-                  placeholder="Pincode"
+                  placeholder="State *"
+                  value={newState}
+                  onChange={(e) => setNewState(e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                />
+                <input
+                  type="text"
+                  placeholder="Pincode *"
                   maxLength={6}
                   value={newPincode}
                   onChange={(e) => setNewPincode(e.target.value)}
@@ -467,7 +498,10 @@ export default function ProfilePage() {
                         )}
                       </div>
                       <p className="text-xs text-foreground-secondary mt-0.5">
-                        {addr.address_line}, {addr.city} - {addr.pincode}
+                        {addr.flat_house_building || addr.address_line}
+                        {addr.area_street_sector ? `, ${addr.area_street_sector}` : ""}
+                        {addr.landmark ? `, Landmark: ${addr.landmark}` : ""}
+                        {`, ${addr.city}`}{addr.state ? `, ${addr.state}` : ""} - {addr.pincode}
                       </p>
                     </div>
                   </div>

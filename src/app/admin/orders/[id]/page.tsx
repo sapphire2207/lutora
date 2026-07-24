@@ -247,14 +247,49 @@ export default function AdminOrderDetailPage() {
           </div>
 
           {/* Delivery Address Card */}
-          <div className="bg-white rounded-2xl border border-border p-6 shadow-xs space-y-3">
-            <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-              <MapPin className="w-5 h-5 text-accent" />
-              Delivery Address
+          <div className="bg-white rounded-2xl border border-border p-6 shadow-xs space-y-4">
+            <h2 className="text-base font-bold flex items-center justify-between border-b border-border pb-3">
+              <span className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-accent" />
+                Delivery Details
+              </span>
+              {order.notes?.match(/\((Home|Work|Other)\)$/i) && (
+                <span className="px-2.5 py-0.5 bg-accent-light text-accent text-[10px] font-bold uppercase rounded-full">
+                  {order.notes.match(/\((Home|Work|Other)\)$/i)[1]}
+                </span>
+              )}
             </h2>
-            <p className="text-xs text-foreground leading-relaxed">
-              {order.notes || "Standard Delivery Address"}
-            </p>
+
+            {(() => {
+              const notesStr = order.notes || "";
+              const parts = notesStr.split(" | Note: ");
+              const addressPart = parts[0] ? parts[0].replace(/\s*\((Home|Work|Other)\)$/i, "").trim() : "";
+              const deliveryInstruction = parts[1] || null;
+
+              return (
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <span className="text-[10px] font-semibold text-foreground-muted uppercase tracking-wider block mb-1">
+                      Shipping Address
+                    </span>
+                    <p className="text-foreground font-medium leading-relaxed bg-background-secondary p-3.5 rounded-xl border border-border">
+                      {addressPart || "No detailed address provided"}
+                    </p>
+                  </div>
+
+                  {deliveryInstruction && (
+                    <div className="p-3 bg-accent-light/40 border border-accent/20 rounded-xl">
+                      <span className="text-[10px] font-bold text-accent uppercase tracking-wider block mb-0.5">
+                        Customer Instruction Note
+                      </span>
+                      <p className="text-foreground text-xs italic">
+                        &quot;{deliveryInstruction}&quot;
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

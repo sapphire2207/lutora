@@ -83,6 +83,7 @@ export const SEED_PRODUCTS = [
     description:
       "Our signature spicy peri peri makhana, tossed in a fiery blend of African bird's eye chili, garlic, and hand-picked spices. Crispy on the outside, light and airy inside. The perfect balance of heat and flavor that keeps you coming back.",
     price: 179,
+    discount_percent: 15,
     category: "spicy",
     spice_level: 3,
     ingredients: [
@@ -107,6 +108,7 @@ export const SEED_PRODUCTS = [
     description:
       "A sweet twist on our classic makhana. Drizzled with organic honey and a hint of cinnamon, these golden fox nuts deliver a satisfying crunch with every bite. Perfect for when you crave something sweet yet wholesome.",
     price: 199,
+    discount_percent: 15,
     category: "honey",
     spice_level: 1,
     ingredients: [

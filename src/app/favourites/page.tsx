@@ -11,7 +11,7 @@ import {
   ShoppingBag,
   Trash2,
 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getDiscountedPrice } from "@/lib/utils";
 import { useFavouritesStore } from "@/stores/favourites-store";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
@@ -156,9 +156,25 @@ export default function FavouritesPage() {
 
                         {/* Price & Add to Cart */}
                         <div className="flex items-center justify-between mt-5 pt-4 border-t border-border-light">
-                          <span className="text-xl font-bold text-foreground">
-                            {formatPrice(product.price)}
-                          </span>
+                          <div>
+                            {product.discount_percent && product.discount_percent > 0 ? (
+                              <div className="flex items-baseline gap-1.5 flex-wrap">
+                                <span className="text-xl font-bold text-accent">
+                                  {formatPrice(getDiscountedPrice(product.price, product.discount_percent))}
+                                </span>
+                                <span className="text-xs text-foreground-muted line-through">
+                                  {formatPrice(product.price)}
+                                </span>
+                                <span className="text-[10px] font-bold text-success bg-success-light px-1.5 py-0.5 rounded">
+                                  {product.discount_percent}% OFF
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xl font-bold text-foreground">
+                                {formatPrice(product.price)}
+                              </span>
+                            )}
+                          </div>
 
                           <button
                             onClick={() => handleAddToCart(product)}

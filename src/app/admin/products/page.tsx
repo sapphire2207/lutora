@@ -16,7 +16,7 @@ import {
   ImageIcon,
   Upload,
 } from "lucide-react";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatPrice, getDiscountedPrice } from "@/lib/utils";
 import { SEED_PRODUCTS } from "@/lib/constants";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ export default function AdminProductsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState(179);
+  const [discountPercent, setDiscountPercent] = useState(0);
   const [stockQuantity, setStockQuantity] = useState(50);
   const [spiceLevel, setSpiceLevel] = useState(3);
   const [imageUrl, setImageUrl] = useState("");
@@ -104,6 +105,7 @@ export default function AdminProductsPage() {
     setName("");
     setDescription("");
     setPrice(179);
+    setDiscountPercent(0);
     setStockQuantity(50);
     setSpiceLevel(3);
     setImageUrl("");
@@ -118,6 +120,7 @@ export default function AdminProductsPage() {
     setName(p.name || "");
     setDescription(p.description || "");
     setPrice(p.price || 179);
+    setDiscountPercent(p.discount_percent || 0);
     setStockQuantity(p.stock_quantity ?? 50);
     setSpiceLevel(p.spice_level || 3);
     setImageUrl(p.image || p.image_url || "/images/makhna-spicy.png");
@@ -147,6 +150,7 @@ export default function AdminProductsPage() {
             name,
             description,
             price: Number(price),
+            discount_percent: Number(discountPercent),
             stock_quantity: Number(stockQuantity),
             spice_level: Number(spiceLevel),
             image: finalImage,
@@ -183,6 +187,7 @@ export default function AdminProductsPage() {
                     name,
                     description,
                     price: Number(price),
+                    discount_percent: Number(discountPercent),
                     stock_quantity: Number(stockQuantity),
                     spice_level: Number(spiceLevel),
                     image: finalImage,
@@ -204,6 +209,7 @@ export default function AdminProductsPage() {
             slug,
             description,
             price: Number(price),
+            discount_percent: Number(discountPercent),
             stock_quantity: Number(stockQuantity),
             spice_level: Number(spiceLevel),
             image: finalImage,
@@ -310,7 +316,7 @@ export default function AdminProductsPage() {
         className="max-w-xl"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-semibold text-foreground-secondary block mb-1">
                 Product Name *
@@ -326,7 +332,7 @@ export default function AdminProductsPage() {
 
             <div>
               <label className="text-xs font-semibold text-foreground-secondary block mb-1">
-                Price (₹) *
+                Original Price (₹) *
               </label>
               <input
                 type="number"
@@ -336,7 +342,34 @@ export default function AdminProductsPage() {
                 className="w-full px-3.5 py-2.5 bg-background-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
               />
             </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground-secondary block mb-1">
+                Discount Percent (%)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                placeholder="0"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(Number(e.target.value))}
+                className="w-full px-3.5 py-2.5 bg-background-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+              />
+            </div>
           </div>
+
+          {/* Price Preview Box */}
+          {discountPercent > 0 && (
+            <div className="p-3 bg-success-light/40 border border-success/30 rounded-xl text-xs flex items-center justify-between">
+              <span className="text-foreground-secondary font-medium">Customer Selling Price:</span>
+              <div className="flex items-center gap-2">
+                <span className="line-through text-foreground-muted">{formatPrice(price)}</span>
+                <span className="font-bold text-success text-sm">{formatPrice(getDiscountedPrice(price, discountPercent))}</span>
+                <span className="px-1.5 py-0.5 bg-success text-white text-[10px] font-bold rounded">{discountPercent}% OFF</span>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -551,9 +584,22 @@ export default function AdminProductsPage() {
                       <h3 className="text-sm font-semibold truncate">
                         {product.name}
                       </h3>
-                      <span className="text-sm font-bold text-foreground">
-                        {formatPrice(product.price)}
-                      </span>
+                      <div className="text-right">
+                        {product.discount_percent && product.discount_percent > 0 ? (
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-bold text-accent">
+                              {formatPrice(getDiscountedPrice(product.price, product.discount_percent))}
+                            </span>
+                            <span className="text-[10px] text-foreground-muted line-through">
+                              {formatPrice(product.price)} ({product.discount_percent}% OFF)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm font-bold text-foreground">
+                            {formatPrice(product.price)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <p className="text-xs text-foreground-secondary mt-0.5 line-clamp-1">
