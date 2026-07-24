@@ -3,9 +3,9 @@
 // ============================================
 
 export const APP_NAME = "LUTORA";
-export const APP_TAGLINE = "Peri Peri Makhna";
+export const APP_TAGLINE = "Peri Peri Makhana";
 export const APP_DESCRIPTION =
-  "Experience the perfect blend of peri peri spice and makhna magic. Bold flavors, made to crave.";
+  "Experience the perfect blend of peri peri spice and makhana magic. Bold flavors, made to crave.";
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 // Navigation Links
@@ -67,7 +67,7 @@ export const DELIVERY_FEE = 30;
 export const TAX_RATE = 0.05; // 5% GST
 export const FREE_DELIVERY_THRESHOLD = 299;
 
-// Categories (Focused strictly on our 2 signature Makhna flavors)
+// Categories (Focused strictly on our 2 signature Makhana flavors)
 export const CATEGORIES = [
   { id: "all", name: "All Flavors", slug: "all", icon: "Utensils" },
   { id: "spicy", name: "Peri Peri Spicy", slug: "spicy", icon: "Flame" },
@@ -78,15 +78,15 @@ export const CATEGORIES = [
 export const SEED_PRODUCTS = [
   {
     id: "makhna-spicy",
-    name: "Peri Peri Makhna",
+    name: "Peri Peri Makhana",
     slug: "peri-peri-makhna",
     description:
-      "Our signature spicy peri peri makhna, tossed in a fiery blend of African bird's eye chili, garlic, and hand-picked spices. Crispy on the outside, light and airy inside. The perfect balance of heat and flavor that keeps you coming back.",
+      "Our signature spicy peri peri makhana, tossed in a fiery blend of African bird's eye chili, garlic, and hand-picked spices. Crispy on the outside, light and airy inside. The perfect balance of heat and flavor that keeps you coming back.",
     price: 179,
     category: "spicy",
     spice_level: 3,
     ingredients: [
-      "Premium Makhna (Fox Nuts)",
+      "Premium Makhana (Fox Nuts)",
       "Peri Peri Spice Blend",
       "Garlic",
       "Olive Oil",
@@ -95,17 +95,17 @@ export const SEED_PRODUCTS = [
       "Sea Salt",
     ],
     is_available: true,
-    is_bestseller: true,
+    is_bestseller: false,
     rating: 4.8,
     review_count: 230,
     image: "/images/makhna-spicy.png",
   },
   {
     id: "makhna-honey",
-    name: "Honey Makhna",
+    name: "Honey Makhana",
     slug: "honey-makhna",
     description:
-      "A sweet twist on our classic makhna. Drizzled with organic honey and a hint of cinnamon, these golden fox nuts deliver a satisfying crunch with every bite. Perfect for when you crave something sweet yet wholesome.",
+      "A sweet twist on our classic makhana. Drizzled with organic honey and a hint of cinnamon, these golden fox nuts deliver a satisfying crunch with every bite. Perfect for when you crave something sweet yet wholesome.",
     price: 199,
     category: "honey",
     spice_level: 1,
@@ -140,7 +140,7 @@ export const TESTIMONIALS = [
     name: "Priya Sharma",
     avatar: "PS",
     rating: 5,
-    text: "The Peri Peri Makhna is absolutely addictive! Perfect spice level and incredibly fresh. Best snack I've had in a long time.",
+    text: "The Peri Peri Makhana is absolutely addictive! Perfect spice level and incredibly fresh. Best snack I've had in a long time.",
     date: "2 weeks ago",
   },
   {
@@ -148,7 +148,7 @@ export const TESTIMONIALS = [
     name: "Arjun Patel",
     avatar: "AP",
     rating: 5,
-    text: "Honey Makhna is my go-to evening snack now. Sweet, crunchy, and guilt-free. The quality is consistently excellent.",
+    text: "Honey Makhana is my go-to evening snack now. Sweet, crunchy, and guilt-free. The quality is consistently excellent.",
     date: "1 month ago",
   },
   {
@@ -172,14 +172,14 @@ export const TESTIMONIALS = [
 // FAQ
 export const FAQ_ITEMS = [
   {
-    question: "What is Makhna?",
+    question: "What is Makhana?",
     answer:
-      "Makhna (Fox Nuts or Lotus Seeds) is a popular Indian superfood known for its light, crunchy texture and numerous health benefits. It's naturally gluten-free, low in calories, and high in protein.",
+      "Makhana (Fox Nuts or Lotus Seeds) is a popular Indian superfood known for its light, crunchy texture and numerous health benefits. It's naturally gluten-free, low in calories, and high in protein.",
   },
   {
-    question: "How spicy is the Peri Peri Makhna?",
+    question: "How spicy is the Peri Peri Makhana?",
     answer:
-      "Our Peri Peri Makhna has a medium-hot spice level (3/5). It has a pleasant kick without being overwhelming. Perfect for those who enjoy a good balance of heat and flavor.",
+      "Our Peri Peri Makhana has a medium-hot spice level (3/5). It has a pleasant kick without being overwhelming. Perfect for those who enjoy a good balance of heat and flavor.",
   },
   {
     question: "What areas do you deliver to?",
@@ -194,7 +194,7 @@ export const FAQ_ITEMS = [
   {
     question: "Are your products vegetarian?",
     answer:
-      "Yes! All our Makhna products are 100% vegetarian and made with premium, natural ingredients. No artificial flavors or preservatives.",
+      "Yes! All our Makhana products are 100% vegetarian and made with premium, natural ingredients. No artificial flavors or preservatives.",
   },
   {
     question: "Can I cancel my order?",
@@ -213,7 +213,7 @@ export const WHY_LUTORA = [
   {
     icon: "Heart",
     title: "Healthy Snacking",
-    description: "Makhna is a superfood — low calorie, high protein, naturally gluten-free.",
+    description: "Makhana is a superfood — low calorie, high protein, naturally gluten-free.",
   },
   {
     icon: "Truck",

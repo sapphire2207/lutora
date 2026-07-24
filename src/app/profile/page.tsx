@@ -211,7 +211,7 @@ export default function ProfilePage() {
     );
   }
 
-  const displayName = profile?.full_name || user.user_metadata?.full_name || "Makhna Lover";
+  const displayName = profile?.full_name || user.user_metadata?.full_name || "Makhana Lover";
   const displayEmail = profile?.email || user.email || "";
   const displayPhone = profile?.phone || user.phone || "Not set";
   const userInitials = displayName

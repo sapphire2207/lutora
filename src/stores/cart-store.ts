@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product, CartItem, CartState } from "@/types";
 import { DELIVERY_FEE, TAX_RATE, FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
+import { useCartModalStore } from "@/stores/modal-store";
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -33,6 +34,13 @@ export const useCartStore = create<CartState>()(
               },
             ],
           });
+        }
+
+        // Trigger Item Added Modal
+        try {
+          useCartModalStore.getState().openModal(product, quantity);
+        } catch (e) {
+          console.error("Failed to open modal:", e);
         }
       },
 

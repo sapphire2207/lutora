@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import {
   MapPin,
   Phone,
-  FileText,
   ArrowLeft,
   Loader2,
   ShoppingBag,
@@ -18,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutSchema, type CheckoutFormData } from "@/validators";
 import { useCartStore } from "@/stores/cart-store";
-import { formatPrice, generateOrderId } from "@/lib/utils";
+import { cn, formatPrice, generateOrderId } from "@/lib/utils";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
@@ -37,6 +36,7 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -49,6 +49,8 @@ export default function CheckoutPage() {
       notes: "",
     },
   });
+
+  const currentLabel = watch("label");
 
   // Load saved addresses and default phone from Supabase
   useEffect(() => {
@@ -292,16 +294,24 @@ export default function CheckoutPage() {
                       Address Label
                     </label>
                     <div className="flex gap-2">
-                      {["Home", "Work", "Other"].map((lbl) => (
-                        <button
-                          key={lbl}
-                          type="button"
-                          onClick={() => setValue("label", lbl)}
-                          className="px-4 py-2 text-xs font-medium border border-border rounded-xl hover:border-accent transition-colors"
-                        >
-                          {lbl}
-                        </button>
-                      ))}
+                      {["Home", "Work", "Other"].map((lbl) => {
+                        const isSelected = currentLabel === lbl;
+                        return (
+                          <button
+                            key={lbl}
+                            type="button"
+                            onClick={() => setValue("label", lbl)}
+                            className={cn(
+                              "px-4 py-2 text-xs font-medium border rounded-xl transition-all cursor-pointer",
+                              isSelected
+                                ? "bg-accent text-white border-accent shadow-sm font-semibold"
+                                : "border-border text-foreground-secondary hover:border-accent"
+                            )}
+                          >
+                            {lbl}
+                          </button>
+                        );
+                      })}
                     </div>
                     <input type="hidden" {...register("label")} />
                   </div>
@@ -388,20 +398,6 @@ export default function CheckoutPage() {
                     <p className="text-xs text-danger mt-1">{errors.phone.message}</p>
                   )}
                 </div>
-              </div>
-
-              {/* Notes */}
-              <div className="bg-white rounded-2xl border border-border p-6">
-                <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5 text-accent" />
-                  Delivery Notes
-                </h2>
-                <textarea
-                  placeholder="Any special instructions? (e.g. Leave at front door, don't ring bell)"
-                  {...register("notes")}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-white border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all resize-none"
-                />
               </div>
             </form>
           </div>

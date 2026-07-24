@@ -84,7 +84,7 @@ export default function SignUpPage() {
           </Link>
           <h1 className="text-xl font-bold mt-6">Create an account</h1>
           <p className="text-sm text-foreground-secondary mt-1">
-            Join LUTORA for the best makhna experience
+            Join LUTORA for the best makhana experience
           </p>
         </div>
 

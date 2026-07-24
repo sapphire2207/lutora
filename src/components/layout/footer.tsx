@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   MapPin,
   Phone,
@@ -8,7 +11,10 @@ import {
 import { APP_NAME, APP_TAGLINE, NAV_LINKS } from "@/lib/constants";
 
 export function Footer() {
+  const pathname = usePathname();
   const currentYear = new Date().getFullYear();
+
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <footer className="hidden md:block bg-foreground text-white">
@@ -28,7 +34,7 @@ export function Footer() {
               {APP_TAGLINE}
             </p>
             <p className="text-sm text-white/60 mt-4 leading-relaxed">
-              Experience the perfect blend of peri peri spice and makhna magic.
+              Experience the perfect blend of peri peri spice and makhana magic.
               Bold flavors, made to crave.
             </p>
             <div className="flex items-center gap-3 mt-6">

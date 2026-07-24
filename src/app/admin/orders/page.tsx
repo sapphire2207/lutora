@@ -65,17 +65,31 @@ export default function AdminOrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       const supabase = createClient();
-      const { error } = await supabase
+      let { data, error } = await supabase
         .from("orders")
         .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .select();
+
+      if ((!data || data.length === 0)) {
+        const res = await supabase
+          .from("orders")
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq("order_number", orderId)
+          .select();
+        data = res.data;
+        error = res.error;
+      }
 
       if (error) {
-        toast.error(`Failed to update status: ${error.message}`);
+        console.error("Status update error:", error);
+        toast.error(`Update failed: ${error.message}`);
+      } else if (!data || data.length === 0) {
+        toast.error("Database update blocked by RLS. Run SQL command in Supabase.");
       } else {
         toast.success(`Order status updated to ${ORDER_STATUS_LABELS[newStatus] || newStatus}!`);
         setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+          prev.map((o) => (o.id === orderId || o.order_number === orderId ? { ...o, status: newStatus } : o))
         );
       }
     } catch {
@@ -154,9 +168,9 @@ export default function AdminOrdersPage() {
             const itemSummary =
               order.order_items && order.order_items.length > 0
                 ? order.order_items
-                    .map((item: any) => `${item.product?.name || "Makhna"} ×${item.quantity}`)
+                    .map((item: any) => `${item.product?.name || "Makhana"} ×${item.quantity}`)
                     .join(", ")
-                : "1x Makhna Order";
+                : "1x Makhana Order";
 
             return (
               <motion.div
@@ -193,9 +207,9 @@ export default function AdminOrdersPage() {
                     </span>
                     <div className="flex items-center gap-1">
                       <Link
-                        href={`/orders/${order.id}`}
+                        href={`/admin/orders/${order.id}`}
                         className="p-1.5 rounded-lg text-foreground-muted hover:text-accent hover:bg-accent-light transition-colors"
-                        title="View Live Order Tracking"
+                        title="View Full Admin Order & Customer Details"
                       >
                         <Eye className="w-4 h-4" />
                       </Link>

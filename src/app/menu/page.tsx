@@ -14,11 +14,13 @@ import {
   UtensilsCrossed,
   AlertTriangle,
   Package,
+  Heart,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { cn, formatPrice } from "@/lib/utils";
 import { SEED_PRODUCTS, CATEGORIES } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
+import { useFavouritesStore } from "@/stores/favourites-store";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -131,7 +133,7 @@ export default function ProductsPage() {
               <Package className="w-6 h-6 text-accent" />
             </h1>
             <p className="text-sm text-foreground-secondary mt-1">
-              Handcrafted Peri Peri Spicy & Organic Honey Makhna
+              Handcrafted Peri Peri Spicy & Organic Honey Makhana
             </p>
           </motion.div>
 
@@ -171,7 +173,7 @@ export default function ProductsPage() {
       <section className="sticky top-[var(--nav-height)] z-30 bg-white border-b border-border">
         <div className="container-app">
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-3">
-            {CATEGORIES.map((cat) => {
+            {CATEGORIES.filter((c) => c.slug === "all").map((cat) => {
               const Icon = categoryIconMap[cat.icon] || Utensils;
               const isSelected = selectedCategory === cat.slug;
               return (
@@ -216,7 +218,7 @@ export default function ProductsPage() {
                 const CatIcon = cat ? categoryIconMap[cat.icon] || Utensils : Utensils;
                 const stock = product.stock_quantity ?? 50;
                 const inStock = product.is_available && stock > 0;
-                const ingredients = product.ingredients || ["Premium Makhna", "Special Spices"];
+                const ingredients = product.ingredients || ["Premium Makhana", "Special Spices"];
 
                 return (
                   <motion.div
@@ -243,17 +245,16 @@ export default function ProductsPage() {
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
                             sizes="(max-width: 640px) 100vw, 200px"
                           />
-                          {product.is_bestseller && (
-                            <span className="absolute top-3 left-3 px-2.5 py-1 bg-accent text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
-                              Bestseller
-                            </span>
-                          )}
                           {!inStock && (
                             <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
                               <span className="px-3 py-1 bg-danger text-white text-xs font-bold uppercase tracking-wider rounded-full flex items-center gap-1">
                                 <AlertTriangle className="w-3.5 h-3.5" /> Out of Stock
                               </span>
                             </div>
+                          )}
+                          {/* Heart Icon */}
+                          {inStock && (
+                            <HeartButton product={product} />
                           )}
                         </Link>
 
@@ -279,15 +280,6 @@ export default function ProductsPage() {
                                 <span className="text-xs text-foreground-muted">
                                   ({product.review_count || 150})
                                 </span>
-                              </div>
-                              <span className="text-foreground-muted">·</span>
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-foreground-muted">Spice:</span>
-                                <div className="flex items-center">
-                                  {Array.from({ length: product.spice_level || 3 }).map((_, i) => (
-                                    <Flame key={i} className="w-3.5 h-3.5 text-accent fill-accent/20" />
-                                  ))}
-                                </div>
                               </div>
                             </div>
 
@@ -358,3 +350,29 @@ export default function ProductsPage() {
     </div>
   );
 }
+
+function HeartButton({ product }: { product: any }) {
+  const { isFavourite, toggleFavourite } = useFavouritesStore();
+  const isFav = isFavourite(product.id);
+
+  return (
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFavourite(product as Product);
+        toast(isFav ? "Removed from favourites" : "Added to favourites");
+      }}
+      className={cn(
+        "absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md z-10 cursor-pointer",
+        isFav
+          ? "bg-danger text-white"
+          : "bg-white/90 text-foreground-secondary hover:text-danger"
+      )}
+      aria-label="Toggle favourite"
+    >
+      <Heart className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />
+    </button>
+  );
+}
+

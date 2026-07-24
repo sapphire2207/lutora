@@ -15,8 +15,6 @@ import {
   Shield,
   Plus,
   Quote,
-  Sparkles,
-  Utensils,
 } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import {
@@ -25,9 +23,9 @@ import {
   TESTIMONIALS,
   FAQ_ITEMS,
   WHY_LUTORA,
-  CATEGORIES,
 } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
+import { useFavouritesStore } from "@/stores/favourites-store";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Product } from "@/types";
@@ -59,18 +57,10 @@ const trustIconMap: Record<string, React.ElementType> = {
   Star,
 };
 
-// Icon map for Categories
-const categoryIconMap: Record<string, React.ElementType> = {
-  Utensils,
-  Flame,
-  Sparkles,
-};
-
 export default function HomePage() {
   return (
     <div className="overflow-hidden">
       <HeroSection />
-      <CategoriesSection />
       <PopularPicksSection />
       <WhyLutoraSection />
       <TestimonialsSection />
@@ -116,7 +106,7 @@ function HeroSection() {
               variants={fadeUp}
               className="mt-5 text-base sm:text-lg text-foreground-secondary max-w-lg leading-relaxed"
             >
-              Experience the perfect blend of peri peri spice and makhna magic.
+              Experience the perfect blend of peri peri spice and makhana magic.
               Premium, healthy snacks delivered fresh to your door.
             </motion.p>
 
@@ -178,7 +168,7 @@ function HeroSection() {
 
               <Image
                 src="/images/hero-makhna.png"
-                alt="LUTORA Peri Peri Makhna — Crispy spiced fox nuts in a premium bowl"
+                alt="LUTORA Peri Peri Makhana — Crispy spiced fox nuts in a premium bowl"
                 fill
                 className="object-contain relative z-10 drop-shadow-xl"
                 priority
@@ -205,54 +195,6 @@ function HeroSection() {
             </div>
           </motion.div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-/* ===========================
-   CATEGORIES SECTION
-   =========================== */
-function CategoriesSection() {
-  return (
-    <section className="py-12 md:py-16 bg-background-secondary">
-      <div className="container-app">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={stagger}
-        >
-          <motion.h2
-            variants={fadeUp}
-            className="text-xl sm:text-2xl font-bold"
-          >
-            Explore Flavors
-          </motion.h2>
-
-          <motion.div
-            variants={fadeUp}
-            className="mt-6 flex gap-3 overflow-x-auto no-scrollbar pb-2"
-          >
-            {CATEGORIES.map((cat) => {
-              const Icon = categoryIconMap[cat.icon] || Utensils;
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/menu?category=${cat.slug}`}
-                  className="flex items-center gap-2.5 px-6 py-3.5 bg-white rounded-2xl border border-border hover:border-accent hover:shadow-md transition-all shrink-0 group"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-accent-light text-accent flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-colors">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">
-                    {cat.name}
-                  </span>
-                </Link>
-              );
-            })}
-          </motion.div>
-        </motion.div>
       </div>
     </section>
   );
@@ -288,7 +230,7 @@ function PopularPicksSection() {
                 <Flame className="w-5 h-5 text-accent" />
               </h2>
               <p className="text-sm text-foreground-secondary mt-1">
-                Handcrafted Peri Peri Spicy & Organic Honey Makhna
+                Handcrafted Peri Peri Spicy & Organic Honey Makhana
               </p>
             </div>
             <Link
@@ -334,8 +276,8 @@ function ProductCard({
   product: typeof SEED_PRODUCTS[number];
   onAddToCart: () => void;
 }) {
-  const cat = CATEGORIES.find((c) => c.id === product.category);
-  const CatIcon = cat ? categoryIconMap[cat.icon] || Utensils : Utensils;
+  const { isFavourite, toggleFavourite } = useFavouritesStore();
+  const isFav = isFavourite(product.id);
 
   return (
     <motion.div
@@ -353,11 +295,23 @@ function ProductCard({
             className="object-cover"
             sizes="(max-width: 640px) 100vw, 200px"
           />
-          {product.is_bestseller && (
-            <span className="absolute top-3 left-3 px-2.5 py-1 bg-accent text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
-              Bestseller
-            </span>
-          )}
+          {/* Heart Icon */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              toggleFavourite(product as unknown as Product);
+              toast(isFav ? "Removed from favourites" : "Added to favourites");
+            }}
+            className={cn(
+              "absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md z-10",
+              isFav
+                ? "bg-danger text-white"
+                : "bg-white/90 text-foreground-secondary hover:text-danger"
+            )}
+            aria-label="Toggle favourite"
+          >
+            <Heart className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />
+          </button>
         </div>
 
         {/* Content */}
@@ -378,11 +332,6 @@ function ProductCard({
               </div>
               <span className="text-xs text-foreground-muted">
                 ({product.review_count})
-              </span>
-              <span className="text-foreground-muted mx-1">·</span>
-              <span className="text-xs text-foreground-muted flex items-center gap-1">
-                <CatIcon className="w-3 h-3 text-accent" />
-                {cat?.name}
               </span>
             </div>
           </div>
@@ -479,7 +428,7 @@ function TestimonialsSection() {
               What Our Customers Say
             </h2>
             <p className="text-sm text-foreground-secondary mt-2">
-              Real reviews from real makhna lovers
+              Real reviews from real makhana lovers
             </p>
           </motion.div>
 
@@ -612,7 +561,7 @@ function CtaBanner() {
               <span className="text-accent"> Magic</span>?
             </h2>
             <p className="text-sm sm:text-base text-white/60 mt-3 max-w-md mx-auto">
-              Order now and get your fresh makhna delivered in under 30 minutes.
+              Order now and get your fresh makhana delivered in under 30 minutes.
               Free delivery on orders above ₹299.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">

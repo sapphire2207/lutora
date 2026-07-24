@@ -48,8 +48,12 @@ export default function OrderDetailPage() {
 
       if (error) {
         console.error("Error fetching order detail:", error.message);
-      } else {
-        setOrder(data);
+      } else if (data) {
+        const itemsList = data.order_items || data.items || [];
+        setOrder({
+          ...data,
+          items: itemsList,
+        });
       }
     } catch (err) {
       console.error("Order detail exception:", err);
@@ -61,10 +65,10 @@ export default function OrderDetailPage() {
   useEffect(() => {
     fetchOrder();
 
-    // 1. Polling interval (3 seconds) for 100% guaranteed live status updates
+    // 1. Polling interval (2 seconds) for 100% live status updates
     const pollInterval = setInterval(() => {
       fetchOrder();
-    }, 3000);
+    }, 2000);
 
     // 2. Realtime WebSocket subscription
     const supabase = createClient();
@@ -73,14 +77,12 @@ export default function OrderDetailPage() {
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*",
           schema: "public",
           table: "orders",
         },
-        (payload) => {
-          if (payload.new && (payload.new.id === orderId || payload.new.order_number === orderId)) {
-            setOrder((prev) => (prev ? { ...prev, status: payload.new.status } : prev));
-          }
+        () => {
+          fetchOrder();
         }
       )
       .subscribe();
@@ -249,7 +251,7 @@ export default function OrderDetailPage() {
               order.items.map((item, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-foreground-secondary">
-                    {item.product?.name || "Makhna"} × {item.quantity}
+                    {item.product?.name || "Makhana"} × {item.quantity}
                   </span>
                   <span className="font-medium">
                     {formatPrice(item.price * item.quantity)}
@@ -258,7 +260,7 @@ export default function OrderDetailPage() {
               ))
             ) : (
               <div className="flex justify-between text-sm">
-                <span className="text-foreground-secondary">Makhna Order</span>
+                <span className="text-foreground-secondary">Makhana Order</span>
                 <span className="font-medium">{formatPrice(order.total)}</span>
               </div>
             )}

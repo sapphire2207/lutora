@@ -14,33 +14,35 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "LUTORA — Peri Peri Makhna | Bold Flavors, Made to Crave",
+    default: "LUTORA — Peri Peri Makhana | Bold Flavors, Made to Crave",
     template: "%s | LUTORA",
   },
   description:
-    "Experience the perfect blend of peri peri spice and makhna magic. Premium, healthy fox nut snacks delivered to your door in 30 minutes.",
+    "Experience the perfect blend of peri peri spice and makhana magic. Premium, healthy fox nut snacks delivered to your door in 30 minutes.",
   keywords: [
-    "LUTORA",
-    "Peri Peri Makhna",
-    "fox nuts",
-    "makhna",
+    "Peri Peri Makhana",
+    "Honey Makhana",
+    "makhana",
     "healthy snacks",
-    "peri peri",
-    "order online",
+    "fox nuts",
+    "lotus seeds",
+    "LUTORA",
+    "snack delivery",
   ],
+  authors: [{ name: "LUTORA" }],
   openGraph: {
     type: "website",
     locale: "en_IN",
     siteName: "LUTORA",
-    title: "LUTORA — Peri Peri Makhna",
+    title: "LUTORA — Peri Peri Makhana",
     description:
-      "Bold flavors, made to crave. Premium peri peri makhna delivered fresh.",
+      "Bold flavors, made to crave. Premium peri peri makhana delivered fresh.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LUTORA — Peri Peri Makhna",
+    title: "LUTORA — Peri Peri Makhana",
     description:
-      "Bold flavors, made to crave. Premium peri peri makhna delivered fresh.",
+      "Bold flavors, made to crave. Premium peri peri makhana delivered fresh.",
   },
   robots: {
     index: true,

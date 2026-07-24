@@ -11,17 +11,15 @@ import {
   Plus,
   ShoppingBag,
   Heart,
-  Share2,
-  Flame,
-  ChevronRight,
   Zap,
   Gift,
   UtensilsCrossed,
 } from "lucide-react";
 import { useState } from "react";
 import { cn, formatPrice } from "@/lib/utils";
-import { SEED_PRODUCTS, SPICE_LEVELS } from "@/lib/constants";
+import { SEED_PRODUCTS } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
+import { useFavouritesStore } from "@/stores/favourites-store";
 import { toast } from "sonner";
 import type { Product } from "@/types";
 
@@ -30,8 +28,8 @@ export default function ProductDetailPage() {
   const slug = params.slug as string;
   const product = SEED_PRODUCTS.find((p) => p.slug === slug);
   const [quantity, setQuantity] = useState(1);
-  const [isFavorited, setIsFavorited] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
+  const { isFavourite, toggleFavourite } = useFavouritesStore();
 
   if (!product) {
     return (
@@ -57,7 +55,6 @@ export default function ProductDetailPage() {
   }
 
   const otherProducts = SEED_PRODUCTS.filter((p) => p.id !== product.id);
-  const spiceInfo = SPICE_LEVELS.find((s) => s.level === product.spice_level);
 
   const handleAddToCart = () => {
     addItem(product as unknown as Product, quantity);
@@ -65,28 +62,10 @@ export default function ProductDetailPage() {
     setQuantity(1);
   };
 
+  const isFav = isFavourite(product.id);
+
   return (
     <div className="min-h-screen">
-      {/* Breadcrumb */}
-      <div className="bg-background-secondary border-b border-border">
-        <div className="container-app py-3">
-          <nav className="flex items-center gap-1.5 text-xs text-foreground-muted">
-            <Link href="/" className="hover:text-foreground transition-colors">
-              Home
-            </Link>
-            <ChevronRight className="w-3 h-3" />
-            <Link
-              href="/menu"
-              className="hover:text-foreground transition-colors"
-            >
-              Menu
-            </Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-foreground font-medium">{product.name}</span>
-          </nav>
-        </div>
-      </div>
-
       <div className="container-app py-8 md:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Product Image */}
@@ -104,42 +83,27 @@ export default function ProductDetailPage() {
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
-              {product.is_bestseller && (
-                <span className="absolute top-4 left-4 px-3 py-1.5 bg-accent text-white text-xs font-bold uppercase tracking-wider rounded-full">
-                  Bestseller
-                </span>
-              )}
             </div>
 
             {/* Action Buttons */}
             <div className="absolute top-4 right-4 flex flex-col gap-2">
               <button
                 onClick={() => {
-                  setIsFavorited(!isFavorited);
-                  toast(isFavorited ? "Removed from favorites" : "Added to favorites");
+                  toggleFavourite(product as unknown as Product);
+                  toast(isFav ? "Removed from favourites" : "Added to favourites");
                 }}
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md",
-                  isFavorited
+                  "w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md cursor-pointer",
+                  isFav
                     ? "bg-danger text-white"
                     : "bg-white text-foreground-secondary hover:text-danger"
                 )}
-                aria-label="Toggle favorite"
+                aria-label="Toggle favourite"
               >
                 <Heart
                   className="w-5 h-5"
-                  fill={isFavorited ? "currentColor" : "none"}
+                  fill={isFav ? "currentColor" : "none"}
                 />
-              </button>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success("Link copied!");
-                }}
-                className="w-10 h-10 rounded-full bg-white text-foreground-secondary hover:text-foreground flex items-center justify-center transition-colors shadow-md"
-                aria-label="Share product"
-              >
-                <Share2 className="w-5 h-5" />
               </button>
             </div>
           </motion.div>
@@ -152,7 +116,7 @@ export default function ProductDetailPage() {
           >
             {/* Category */}
             <span className="text-xs font-medium text-accent uppercase tracking-wider">
-              Makhna
+              Makhana
             </span>
 
             <h1 className="text-3xl sm:text-4xl font-bold mt-2">
@@ -193,33 +157,7 @@ export default function ProductDetailPage() {
               {product.description}
             </p>
 
-            {/* Spice Level */}
-            <div className="mt-6 p-4 bg-background-secondary rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <Flame className="w-4 h-4 text-accent" />
-                <span className="text-sm font-semibold">Spice Level</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {SPICE_LEVELS.map((level) => (
-                  <div
-                    key={level.level}
-                    className={cn(
-                      "flex-1 h-2 rounded-full transition-colors",
-                      level.level <= product.spice_level
-                        ? product.spice_level <= 2
-                          ? "bg-amber-400"
-                          : product.spice_level <= 3
-                          ? "bg-orange-500"
-                          : "bg-red-500"
-                        : "bg-border"
-                    )}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-foreground-muted mt-2">
-                {spiceInfo?.label}
-              </p>
-            </div>
+
 
             {/* Ingredients */}
             <div className="mt-6">

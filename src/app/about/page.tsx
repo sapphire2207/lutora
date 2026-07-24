@@ -45,7 +45,7 @@ export default function AboutPage() {
               className="text-foreground-secondary mt-4 max-w-lg mx-auto leading-relaxed"
             >
               LUTORA was born from a simple idea: combine the ancient superfood
-              makhna with bold, modern flavors. No compromises on taste. No
+              makhana with bold, modern flavors. No compromises on taste. No
               compromises on health.
             </motion.p>
           </motion.div>

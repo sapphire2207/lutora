@@ -37,17 +37,43 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       const supabase = createClient();
-      // Fetch profiles
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching profiles:", error.message);
-      } else {
-        setUsers(profiles || []);
-      }
+      const [profilesRes, ordersRes, addressesRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase.from("orders").select("user_id"),
+        supabase.from("addresses").select("user_id"),
+      ]);
+
+      const profiles = profilesRes.data || [];
+      const orders = ordersRes.data || [];
+      const addresses = addressesRes.data || [];
+
+      // Calculate order count per user
+      const orderCountMap = new Map<string, number>();
+      orders.forEach((o) => {
+        if (o.user_id) {
+          orderCountMap.set(o.user_id, (orderCountMap.get(o.user_id) || 0) + 1);
+        }
+      });
+
+      // Calculate address count per user
+      const addressCountMap = new Map<string, number>();
+      addresses.forEach((a) => {
+        if (a.user_id) {
+          addressCountMap.set(a.user_id, (addressCountMap.get(a.user_id) || 0) + 1);
+        }
+      });
+
+      const merged = profiles.map((p) => ({
+        ...p,
+        orders_count: orderCountMap.get(p.id) || 0,
+        addresses_count: addressCountMap.get(p.id) || 0,
+      }));
+
+      setUsers(merged);
     } catch (err) {
       console.error("Users exception:", err);
     } finally {
@@ -179,8 +205,8 @@ export default function AdminUsersPage() {
               .substring(0, 2)
               .toUpperCase();
             const isEditing = editingUserId === userItem.id;
-            const ordersCount = userItem.orders?.[0]?.count || 0;
-            const addressesCount = userItem.addresses?.[0]?.count || 0;
+            const ordersCount = userItem.orders_count || 0;
+            const addressesCount = userItem.addresses_count || 0;
 
             return (
               <motion.div

@@ -10,7 +10,6 @@ import {
   ArrowRight,
   ShoppingBag,
   ArrowLeft,
-  Tag,
 } from "lucide-react";
 import { useState } from "react";
 import { cn, formatPrice } from "@/lib/utils";
@@ -21,7 +20,6 @@ import { toast } from "sonner";
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, getSubtotal, getTax, getDeliveryFee, getTotal, getItemCount } =
     useCartStore();
-  const [couponCode, setCouponCode] = useState("");
 
   const subtotal = getSubtotal();
   const tax = getTax();
@@ -43,7 +41,7 @@ export default function CartPage() {
           </div>
           <h1 className="text-2xl font-bold">Your cart is empty</h1>
           <p className="text-sm text-foreground-secondary mt-2 max-w-xs mx-auto">
-            Looks like you haven&apos;t added any makhna yet. Let&apos;s fix that!
+            Looks like you haven&apos;t added any makhana yet. Let&apos;s fix that!
           </p>
           <Link
             href="/menu"
@@ -82,33 +80,6 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-3">
-            {/* Free delivery progress */}
-            {freeDeliveryRemaining > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-accent-light rounded-xl border border-accent/10"
-              >
-                <p className="text-sm font-medium text-accent-hover">
-                  Add {formatPrice(freeDeliveryRemaining)} more for{" "}
-                  <span className="font-bold">free delivery!</span>
-                </p>
-                <div className="mt-2 h-1.5 bg-accent-lighter rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-accent rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${Math.min(
-                        100,
-                        (subtotal / FREE_DELIVERY_THRESHOLD) * 100
-                      )}%`,
-                    }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-              </motion.div>
-            )}
-
             <AnimatePresence mode="popLayout">
               {items.map((item) => (
                 <motion.div
@@ -204,28 +175,6 @@ export default function CartPage() {
             <div className="sticky top-[calc(var(--nav-height)+24px)]">
               <div className="bg-white rounded-2xl border border-border p-6">
                 <h2 className="text-lg font-semibold mb-5">Order Summary</h2>
-
-                {/* Coupon */}
-                <div className="flex gap-2 mb-5">
-                  <div className="relative flex-1">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
-                    <input
-                      type="text"
-                      placeholder="Coupon code"
-                      value={couponCode}
-                      onChange={(e) =>
-                        setCouponCode(e.target.value.toUpperCase())
-                      }
-                      className="w-full pl-10 pr-3 py-2.5 bg-background-secondary border border-border rounded-xl text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
-                    />
-                  </div>
-                  <button
-                    onClick={() => toast.info("Coupon feature coming soon!")}
-                    className="px-4 py-2.5 bg-foreground text-white text-sm font-medium rounded-xl hover:bg-foreground/90 transition-colors"
-                  >
-                    Apply
-                  </button>
-                </div>
 
                 {/* Breakdown */}
                 <div className="space-y-3 text-sm">

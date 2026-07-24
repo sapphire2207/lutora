@@ -7,17 +7,18 @@ import { motion } from "framer-motion";
 import {
   Home,
   Package,
-  ClipboardList,
+  Heart,
   ShoppingBag,
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cart-store";
+import { useFavouritesStore } from "@/stores/favourites-store";
 
 const TABS = [
   { label: "Home", href: "/", icon: Home },
   { label: "Products", href: "/menu", icon: Package },
-  { label: "Orders", href: "/orders", icon: ClipboardList },
+  { label: "Favourites", href: "/favourites", icon: Heart },
   { label: "Cart", href: "/cart", icon: ShoppingBag },
   { label: "Profile", href: "/profile", icon: User },
 ];

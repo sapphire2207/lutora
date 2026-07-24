@@ -15,35 +15,69 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchOrders() {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*, order_items(*, product:products(*))")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Error fetching orders:", error.message);
-        } else {
-          setOrders(data || []);
-        }
-      } catch (err) {
-        console.error("Orders fetch exception:", err);
-      } finally {
-        setIsLoading(false);
-      }
+  async function fetchOrders() {
+    if (!user) {
+      setIsLoading(false);
+      return;
     }
 
-    if (!authLoading) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*, product:products(*))")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching orders:", error.message);
+      } else if (data) {
+        const mapped = data.map((o) => ({
+          ...o,
+          items: o.order_items || o.items || [],
+        }));
+        setOrders(mapped as unknown as Order[]);
+      }
+    } catch (err) {
+      console.error("Orders fetch exception:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!authLoading && user) {
       fetchOrders();
+
+      // 1. Polling interval (2 seconds)
+      const pollInterval = setInterval(() => {
+        fetchOrders();
+      }, 2000);
+
+      // 2. Realtime listener
+      const supabase = createClient();
+      const channel = supabase
+        .channel(`user-orders-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "orders",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            fetchOrders();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        clearInterval(pollInterval);
+        supabase.removeChannel(channel);
+      };
+    } else if (!authLoading && !user) {
+      setIsLoading(false);
     }
   }, [user, authLoading]);
 
@@ -133,10 +167,10 @@ export default function OrdersPage() {
                           ? order.items
                               .map(
                                 (i) =>
-                                  `${i.product?.name || "Makhna"} ×${i.quantity}`
+                                  `${i.product?.name || "Makhana"} ×${i.quantity}`
                               )
                               .join(", ")
-                          : "1x Makhna Order"}
+                          : "1x Makhana Order"}
                       </p>
                       <span className="text-sm font-bold">
                         {formatPrice(order.total)}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -13,18 +13,24 @@ import {
   ChevronRight,
   Shield,
   LogOut,
+  Heart,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
 import { useCartStore } from "@/stores/cart-store";
 import { useAuth } from "@/providers/auth-provider";
+import { useFavouritesStore } from "@/stores/favourites-store";
 
 export function Navbar() {
   const pathname = usePathname();
   const { user, profile, isAdmin, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const favouriteCount = useFavouritesStore((s) => s.favourites.length);
   const rawItemCount = useCartStore((state) => state.getItemCount());
   const itemCount = mounted ? rawItemCount : 0;
 
@@ -43,7 +49,19 @@ export function Navbar() {
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsProfileDropdownOpen(false);
   }, [pathname]);
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Prevent scroll when mobile menu is open
   useEffect(() => {
@@ -80,7 +98,7 @@ export function Navbar() {
               RA
             </span>
             <span className="hidden sm:block text-[10px] font-medium text-foreground-secondary tracking-widest uppercase ml-1.5 mt-0.5">
-              Peri Peri Makhna
+              Peri Peri Makhana
             </span>
           </Link>
 
@@ -162,21 +180,96 @@ export function Navbar() {
               </AnimatePresence>
             </Link>
 
+            {/* Favourites */}
+            <Link
+              href="/favourites"
+              className="hidden md:flex relative items-center justify-center w-10 h-10 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-background-secondary transition-colors"
+              aria-label="Favourites"
+            >
+              <Heart className="w-[18px] h-[18px]" />
+              <AnimatePresence>
+                {mounted && favouriteCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-5 h-5 text-[10px] font-semibold text-white bg-danger rounded-full"
+                  >
+                    {favouriteCount > 9 ? "9+" : favouriteCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+
             {/* Profile / Auth actions */}
             {user ? (
-              <Link
-                href="/profile"
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-background-secondary hover:bg-border-light transition-colors"
-              >
-                <div className="w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center">
-                  {(profile?.full_name || user.email || "U")
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
-                <span className="text-xs font-medium max-w-[100px] truncate">
-                  {profile?.full_name?.split(" ")[0] || "Account"}
-                </span>
-              </Link>
+              <div className="hidden md:block relative" ref={profileDropdownRef}>
+                <button
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background-secondary hover:bg-border-light transition-colors cursor-pointer"
+                >
+                  <div className="w-7 h-7 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center">
+                    {(profile?.full_name || user.email || "U")
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
+                  <span className="text-xs font-medium max-w-[100px] truncate">
+                    {profile?.full_name?.split(" ")[0] || "Account"}
+                  </span>
+                </button>
+
+                {/* Profile Dropdown */}
+                <AnimatePresence>
+                  {isProfileDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl border border-border shadow-xl overflow-hidden z-50"
+                    >
+                      <div className="p-3 border-b border-border-light">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {profile?.full_name || "Account"}
+                        </p>
+                        <p className="text-xs text-foreground-muted truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <div className="py-1">
+                        <Link
+                          href="/orders"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-secondary hover:text-foreground hover:bg-background-secondary transition-colors"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                        >
+                          <ClipboardList className="w-4 h-4" />
+                          Orders
+                        </Link>
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-secondary hover:text-foreground hover:bg-background-secondary transition-colors"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                        >
+                          <User className="w-4 h-4" />
+                          Profile
+                        </Link>
+                      </div>
+                      <div className="border-t border-border-light py-1">
+                        <button
+                          onClick={() => {
+                            signOut();
+                            setIsProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-danger-light transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
               <Link
                 href="/sign-in"
