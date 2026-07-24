@@ -162,18 +162,36 @@ export default function CheckoutPage() {
       const newOrderNumber = generateOrderId();
       const formattedAddress = `${data.address_line}, ${data.city} - ${data.pincode} (${data.label})`;
 
-      // Save address to user's saved addresses in Supabase if not exists
-      try {
-        await supabase.from("addresses").insert({
-          user_id: user.id,
-          label: data.label,
-          address_line: data.address_line,
-          city: data.city,
-          pincode: data.pincode,
-          is_default: savedAddresses.length === 0,
-        });
-      } catch (e) {
-        console.error("Address save notice:", e);
+      // Check if address already exists in user's saved addresses before inserting
+      const isDuplicateAddress = savedAddresses.some(
+        (addr) =>
+          addr.label?.trim().toLowerCase() === data.label?.trim().toLowerCase() &&
+          addr.address_line?.trim().toLowerCase() === data.address_line?.trim().toLowerCase() &&
+          addr.city?.trim().toLowerCase() === data.city?.trim().toLowerCase() &&
+          addr.pincode?.trim() === data.pincode?.trim()
+      );
+
+      if (!isDuplicateAddress) {
+        try {
+          const { data: newAddr } = await supabase
+            .from("addresses")
+            .insert({
+              user_id: user.id,
+              label: data.label,
+              address_line: data.address_line,
+              city: data.city,
+              pincode: data.pincode,
+              is_default: savedAddresses.length === 0,
+            })
+            .select()
+            .single();
+
+          if (newAddr) {
+            setSavedAddresses((prev) => [newAddr, ...prev]);
+          }
+        } catch (e) {
+          console.error("Address save notice:", e);
+        }
       }
 
       // Update user phone if profile doesn't have it
