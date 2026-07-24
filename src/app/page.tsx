@@ -129,30 +129,7 @@ function HeroSection() {
               </Link>
             </motion.div>
 
-            {/* Trust Badges */}
-            <motion.div
-              variants={fadeUp}
-              className="flex items-center gap-6 sm:gap-8 mt-10 pt-8 border-t border-border"
-            >
-              {TRUST_BADGES.map((badge) => {
-                const Icon = trustIconMap[badge.icon];
-                return (
-                  <div key={badge.label} className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent-light text-accent">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-foreground">
-                        {badge.label}
-                      </p>
-                      <p className="text-xs text-foreground-muted">
-                        {badge.sublabel}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </motion.div>
+
           </motion.div>
 
           {/* Right Image */}
@@ -278,6 +255,7 @@ function ProductCard({
 }) {
   const { isFavourite, toggleFavourite } = useFavouritesStore();
   const isFav = isFavourite(product.id);
+  const productUrl = `/menu/${product.slug || (product as any).id}`;
 
   return (
     <motion.div
@@ -287,23 +265,27 @@ function ProductCard({
     >
       <div className="flex flex-col sm:flex-row">
         {/* Image */}
-        <div className="relative w-full sm:w-48 h-48 sm:h-auto bg-background-secondary shrink-0">
+        <Link
+          href={productUrl}
+          className="relative w-full sm:w-52 h-52 sm:h-auto bg-background-secondary shrink-0 overflow-hidden block"
+        >
           <Image
             src={product.id === "makhna-spicy" ? "/images/makhna-spicy.png" : "/images/makhna-honey.jpg"}
             alt={product.name}
             fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, 200px"
+            className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 640px) 100vw, 208px"
           />
           {/* Heart Icon */}
           <button
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               toggleFavourite(product as unknown as Product);
               toast(isFav ? "Removed from favourites" : "Added to favourites");
             }}
             className={cn(
-              "absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md z-10",
+              "absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md z-10 cursor-pointer",
               isFav
                 ? "bg-danger text-white"
                 : "bg-white/90 text-foreground-secondary hover:text-danger"
@@ -312,14 +294,16 @@ function ProductCard({
           >
             <Heart className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />
           </button>
-        </div>
+        </Link>
 
         {/* Content */}
         <div className="flex-1 p-5 flex flex-col justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-foreground group-hover:text-accent transition-colors">
-              {product.name}
-            </h3>
+            <Link href={productUrl} className="inline-block group-hover:text-accent transition-colors">
+              <h3 className="text-lg font-semibold text-foreground">
+                {product.name}
+              </h3>
+            </Link>
             <p className="text-sm text-foreground-secondary mt-1 line-clamp-2">
               {product.description}
             </p>
@@ -342,8 +326,11 @@ function ProductCard({
               {formatPrice(product.price)}
             </span>
             <button
-              onClick={onAddToCart}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-full transition-all hover:shadow-md active:scale-95"
+              onClick={(e) => {
+                e.preventDefault();
+                onAddToCart();
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-full transition-all hover:shadow-md active:scale-95 cursor-pointer"
             >
               Add
               <Plus className="w-3.5 h-3.5" />

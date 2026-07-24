@@ -78,7 +78,7 @@ export function ItemAddedModal() {
                   src={imgSrc}
                   alt={product.name}
                   fill
-                  className="object-cover"
+                  className="object-contain p-1"
                   sizes="64px"
                 />
               </div>

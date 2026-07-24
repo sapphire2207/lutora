@@ -96,7 +96,7 @@ export default function CartPage() {
                       src={item.product.id === "makhna-spicy" ? "/images/makhna-spicy.png" : "/images/makhna-honey.jpg"}
                       alt={item.product.name}
                       fill
-                      className="object-cover"
+                      className="object-contain p-1"
                       sizes="96px"
                     />
                   </div>
