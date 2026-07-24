@@ -23,9 +23,10 @@ export function ItemAddedModal() {
     };
   }, [isOpen]);
 
+  const prod = product as any;
   const imgSrc =
-    product?.image ||
-    product?.image_url ||
+    prod?.image ||
+    prod?.image_url ||
     (product?.slug === "peri-peri-makhna" || product?.id === "makhna-spicy"
       ? "/images/makhna-spicy.png"
       : "/images/makhna-honey.jpg");
