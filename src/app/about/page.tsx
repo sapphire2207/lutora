@@ -90,7 +90,7 @@ export default function AboutPage() {
             >
               <div className="relative aspect-square rounded-3xl overflow-hidden bg-accent-lighter">
                 <Image
-                  src="/images/hero-makhna.png"
+                  src="/images/hero-makhna-v2.png"
                   alt="LUTORA premium makhna"
                   fill
                   className="object-contain p-8"

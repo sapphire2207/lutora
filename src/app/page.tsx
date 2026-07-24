@@ -144,7 +144,7 @@ function HeroSection() {
               <div className="absolute inset-4 rounded-full bg-accent-lighter/50" />
 
               <Image
-                src="/images/hero-makhna.png"
+                src="/images/hero-makhna-v2.png"
                 alt="LUTORA Peri Peri Makhana — Crispy spiced fox nuts in a premium bowl"
                 fill
                 className="object-contain relative z-10 drop-shadow-xl"
