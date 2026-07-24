@@ -105,7 +105,7 @@ export default function AdminOrderDetailPage() {
     setIsUpdating(true);
     try {
       const supabase = createClient();
-      
+
       let { data, error } = await supabase
         .from("orders")
         .update({ status: newStatus, updated_at: new Date().toISOString() })
